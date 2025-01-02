@@ -10,8 +10,11 @@ const startConversion = async () => {
   // Display loading spinner
   const loadingDiv = document.getElementById("loading");
   const outputDiv = document.getElementById("output");
+  const mapPreviewDiv = document.getElementById("mapPreview");
+  const mapFrame = document.getElementById("mapFrame");
   loadingDiv.style.display = "block";
   outputDiv.innerHTML = "";
+  mapPreviewDiv.style.display = "none";
 
   try {
     const response = await fetch("/convert", {
@@ -31,6 +34,11 @@ const startConversion = async () => {
         <p><strong>Google Maps URL:</strong></p>
         <a href="${data.googleMapsUrl}" target="_blank">${data.googleMapsUrl}</a>
       `;
+
+      // Update map preview
+      const mapUrl = `https://www.govmap.gov.il/map.html?lay=Matara_MItham,Matara_Mig&bs=Matara_MItham|ACTIVEPROJECTID~${projectInput}`;
+      mapFrame.src = mapUrl;
+      mapPreviewDiv.style.display = "block";
     } else {
       outputDiv.innerHTML = `<p>Error: ${data.error}</p>`;
     }
