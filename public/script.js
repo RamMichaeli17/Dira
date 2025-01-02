@@ -7,6 +7,13 @@ const startConversion = async () => {
     return;
   }
 
+  // Extract project number from URL if necessary
+  let projectNumber = projectInput;
+  const urlMatch = projectInput.match(/\d+/); // מחפש מספר בתוך ה-URL
+  if (urlMatch) {
+    projectNumber = urlMatch[0]; // לוקח רק את המספר
+  }
+
   // Display loading spinner
   const loadingDiv = document.getElementById("loading");
   const outputDiv = document.getElementById("output");
@@ -25,7 +32,7 @@ const startConversion = async () => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ projectInput }),
+      body: JSON.stringify({ projectInput: projectNumber }),
     });
 
     const data = await response.json();
@@ -39,7 +46,7 @@ const startConversion = async () => {
       `;
 
       // Update gov map preview
-      const govMapUrl = `https://www.govmap.gov.il/map.html?lay=Matara_MItham,Matara_Mig&bs=Matara_MItham|ACTIVEPROJECTID~${projectInput}`;
+      const govMapUrl = `https://www.govmap.gov.il/map.html?lay=Matara_MItham,Matara_Mig&bs=Matara_MItham|ACTIVEPROJECTID~${projectNumber}`;
       govMapFrame.src = govMapUrl;
       govMapPreviewDiv.style.display = "block";
       
