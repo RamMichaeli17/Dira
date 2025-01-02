@@ -6,6 +6,7 @@ const path = require("path");
 const app = express();
 const PORT = 3000;
 
+// הגדרות מערכת ITM ו-WGS84
 const ITM =
   "+proj=tmerc +lat_0=31.73439361111111 +lon_0=35.20451694444444 +k=1.0000067 +x_0=219529.584 +y_0=626907.39 +ellps=GRS80 +towgs84=0,0,-48,0,0,0,0 +units=m +no_defs";
 const WGS84 = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs";
@@ -26,8 +27,7 @@ app.post("/convert", async (req, res) => {
 
   // בדיקת הקלט: האם זה URL או מספר פרויקט
   if (/^\d+$/.test(projectInput)) {
-    // זה מספר בלבד
-    projectNumber = projectInput;
+    projectNumber = projectInput; // זה מספר בלבד
   } else if (/https?:\/\//.test(projectInput)) {
     // זה URL – חילוץ מספר הפרויקט
     const match = projectInput.match(/\d+/);
@@ -45,7 +45,7 @@ app.post("/convert", async (req, res) => {
       "https://www.govmap.gov.il/?lay=Matara_MItham,Matara_Mig&bs=Matara_MItham%7CACTIVEPROJECTID~";
     const updatedUrl = baseUrl + projectNumber;
 
-    // Puppeteer
+    // שימוש ב-Puppeteer כדי לבצע עיבוד לכתובת
     const browser = await puppeteer.launch({
       headless: true,
     });
