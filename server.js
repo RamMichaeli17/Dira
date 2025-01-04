@@ -16,7 +16,7 @@ const WGS84 = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs";
 
 const puppeteerConfig = {
   args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  headless: true,
+  headless: process.env.HEADLESS_ON === "true",
   executablePath:
     process.env.NODE_ENV === "production"
       ? process.env.PUPPETEER_EXECUTABLE_PATH
