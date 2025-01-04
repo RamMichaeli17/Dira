@@ -39,6 +39,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.post("/convert", async (req, res) => {
   try {
+    const startTime = Date.now(); // התחלת מדידה
     const { projectInput } = req.body;
     console.log("Received project input:", projectInput);
 
@@ -146,6 +147,9 @@ app.post("/convert", async (req, res) => {
 
         const googleMapsUrl = `https://www.google.com/maps/place/${latitude},${longitude}`;
         await page.close();
+
+        const endTime = Date.now(); // סיום מדידה
+        console.log(`Conversion completed in ${endTime - startTime} ms.`); // זמן סיום
 
         return res.json({ googleMapsUrl, updatedUrl });
       } else {
