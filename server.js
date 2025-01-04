@@ -8,7 +8,6 @@ require("dotenv").config();
 const app = express();
 
 const PORT = process.env.PORT || 3000;
-const BROWSER_POOL_SIZE = parseInt(process.env.BROWSER_POOL_SIZE) || 5;
 
 const ITM =
   "+proj=tmerc +lat_0=31.73439361111111 +lon_0=35.20451694444444 +k=1.0000067 +x_0=219529.584 +y_0=626907.39 +ellps=GRS80 +towgs84=0,0,-48,0,0,0,0 +units=m +no_defs";
@@ -23,17 +22,15 @@ const puppeteerConfig = {
       : puppeteer.executablePath(),
 };
 
-let browserPool = [];
+// יצירת מופע אחד של Puppeteer
+let browser;
 
 (async () => {
   try {
-    for (let i = 0; i < BROWSER_POOL_SIZE; i++) {
-      const browser = await puppeteer.launch(puppeteerConfig);
-      browserPool.push(browser);
-    }
-    console.log("Browser pool initialized successfully.");
+    browser = await puppeteer.launch(puppeteerConfig);
+    console.log("Puppeteer browser instance launched.");
   } catch (error) {
-    console.error("Error initializing browser pool:", error);
+    console.error("Error launching Puppeteer browser instance:", error);
   }
 })();
 
@@ -92,8 +89,7 @@ app.post("/convert", async (req, res) => {
 
     console.log("Generated GovMap URL:", updatedUrl);
 
-    const browser =
-      browserPool.pop() || (await puppeteer.launch(puppeteerConfig));
+    // שימוש במופע אחד של Puppeteer
     const page = await browser.newPage();
 
     console.log("Navigating to GovMap URL...");
@@ -129,7 +125,6 @@ app.post("/convert", async (req, res) => {
     }
 
     // קוד להמשך הפעולה אחרי שה-URL השתנה
-
     if (govMapUrl.includes("C")) {
       const coords = govMapUrl.split("C")[1]?.split(",");
       if (coords?.length === 2) {
@@ -141,7 +136,6 @@ app.post("/convert", async (req, res) => {
         if (isNaN(itmX) || isNaN(itmY)) {
           console.error("Invalid coordinates received:", { itmX, itmY });
           await page.close();
-          browserPool.push(browser);
           return res.status(500).json({
             error: "Invalid coordinates received from GovMap URL.",
           });
@@ -152,13 +146,11 @@ app.post("/convert", async (req, res) => {
 
         const googleMapsUrl = `https://www.google.com/maps/place/${latitude},${longitude}`;
         await page.close();
-        browserPool.push(browser);
 
         return res.json({ googleMapsUrl, updatedUrl });
       } else {
         console.error("Coordinates format is invalid:", coords);
         await page.close();
-        browserPool.push(browser);
         return res.status(500).json({
           error: "Coordinates format is invalid.",
         });
@@ -166,7 +158,6 @@ app.post("/convert", async (req, res) => {
     } else {
       console.error("No coordinates found in URL.");
       await page.close();
-      browserPool.push(browser);
       return res.status(500).json({
         error: "No coordinates found in URL.",
       });
@@ -181,10 +172,8 @@ app.post("/convert", async (req, res) => {
 });
 
 process.on("SIGINT", async () => {
-  console.log("Closing browser pool...");
-  for (const browser of browserPool) {
-    await browser.close();
-  }
+  console.log("Closing Puppeteer browser...");
+  await browser.close();
   process.exit();
 });
 
