@@ -97,10 +97,38 @@ app.post("/convert", async (req, res) => {
     const page = await browser.newPage();
 
     console.log("Navigating to GovMap URL...");
-    await page.goto(updatedUrl, { waitUntil: "networkidle2" });
+    let govMapUrl = updatedUrl;
+    let attempts = 0;
+    const maxAttempts = 3; // מספר ניסיונות
 
-    const govMapUrl = page.url();
-    console.log("GovMap redirected URL:", govMapUrl);
+    while (attempts < maxAttempts) {
+      try {
+        await page.goto(updatedUrl, { waitUntil: "networkidle2" });
+
+        govMapUrl = page.url();
+        console.log("GovMap redirected URL:", govMapUrl);
+
+        if (govMapUrl !== updatedUrl) {
+          // אם ה-URL השתנה, סיימנו
+          break;
+        } else {
+          console.log("URL is the same as updated URL. Retrying...");
+          attempts++; // המתן 2 שניות לפני שננסה שוב
+        }
+      } catch (error) {
+        console.error("Error during page.goto:", error);
+        attempts++; // המתן 2 שניות לפני שננסה שוב
+      }
+    }
+
+    if (attempts === maxAttempts) {
+      console.error("Failed to get a redirected URL after several attempts.");
+      return res.status(500).json({
+        error: "Failed to get redirected URL after several attempts.",
+      });
+    }
+
+    // קוד להמשך הפעולה אחרי שה-URL השתנה
 
     if (govMapUrl.includes("C")) {
       const coords = govMapUrl.split("C")[1]?.split(",");
@@ -146,7 +174,8 @@ app.post("/convert", async (req, res) => {
   } catch (error) {
     console.error("Error during conversion:", error);
     return res.status(500).json({
-      error: "An unexpected error occurred during processing. Please try again later.",
+      error:
+        "An unexpected error occurred during processing. Please try again later.",
     });
   }
 });
