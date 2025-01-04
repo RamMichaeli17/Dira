@@ -39,30 +39,31 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 app.post("/convert", async (req, res) => {
-  const { projectInput } = req.body;
-
-  if (!projectInput) {
-    return res.status(400).json({ error: "Invalid input." });
-  }
-
-  let projectNumber;
-
-  // בדיקת הקלט: האם זה URL או מספר פרויקט
-  if (/^\d+$/.test(projectInput)) {
-    projectNumber = projectInput; // זה מספר בלבד
-  } else if (/https?:\/\//.test(projectInput)) {
-    // זה URL – חילוץ מספר הפרויקט
-    const match = projectInput.match(/\d+/);
-    if (match) {
-      projectNumber = match[0];
-    } else {
-      return res.status(400).json({ error: "No project number found in URL." });
-    }
-  } else {
-    return res.status(400).json({ error: "Invalid input format." });
-  }
-
   try {
+    const { projectInput } = req.body;
+
+    // אם לא קיבלנו קלט, מחזירים שגיאה
+    if (!projectInput) {
+      return res.status(400).json({ error: "Invalid input. Project input is required." });
+    }
+
+    let projectNumber;
+
+    // בדיקת הקלט: האם זה מספר פרויקט או URL
+    if (/^\d+$/.test(projectInput)) {
+      projectNumber = projectInput;
+    } else if (/https?:\/\//.test(projectInput)) {
+      // חילוץ מספר פרויקט מתוך URL
+      const match = projectInput.match(/\d+/);
+      if (match) {
+        projectNumber = match[0];
+      } else {
+        return res.status(400).json({ error: "No project number found in URL." });
+      }
+    } else {
+      return res.status(400).json({ error: "Invalid input format. Expected project number or URL." });
+    }
+
     const baseUrl =
       "https://www.govmap.gov.il/?lay=Matara_MItham,Matara_Mig&bs=Matara_MItham%7CACTIVEPROJECTID~";
     const updatedUrl = baseUrl + projectNumber;
@@ -89,11 +90,11 @@ app.post("/convert", async (req, res) => {
     } else {
       await page.close();
       browserPool.push(browser);
-      return res.status(500).json({ error: "No coordinates found." });
+      return res.status(500).json({ error: "No coordinates found. Unable to retrieve project coordinates." });
     }
   } catch (error) {
-    console.error("Error:", error);
-    return res.status(500).json({ error: "An error occurred during processing." });
+    console.error("Error during conversion:", error);
+    return res.status(500).json({ error: "An unexpected error occurred during processing. Please try again later." });
   }
 });
 
