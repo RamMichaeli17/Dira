@@ -3,8 +3,14 @@ const puppeteer = require("puppeteer");
 const proj4 = require("proj4");
 const path = require("path");
 
+require("dotenv").config();
+
 const app = express();
+
+// קבלת ערך ממשתני הסביבה או ברירת מחדל
 const PORT = process.env.PORT || 3000;
+const CHROME_EXECUTABLE_PATH = process.env.CHROME_EXECUTABLE_PATH;
+const BROWSER_POOL_SIZE = parseInt(process.env.BROWSER_POOL_SIZE) || 5;  // לוודא שהערך הוא מספר
 
 // הגדרות מערכת ITM ו-WGS84
 const ITM =
@@ -15,11 +21,10 @@ const WGS84 = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs";
 const puppeteerConfig = {
   args: ["--no-sandbox", "--disable-setuid-sandbox"],
   headless: true,
-  executablePath: process.env.CHROME_EXECUTABLE_PATH || null,
+  executablePath: CHROME_EXECUTABLE_PATH || null,
 };
 
 // מאגר Puppeteer
-const BROWSER_POOL_SIZE = 5;
 let browserPool = [];
 
 (async () => {
