@@ -14,7 +14,7 @@ const ITM =
 const WGS84 = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs";
 
 const puppeteerConfig = {
-  args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu", "--single-process"],
   headless: process.env.HEADLESS_ON === "true",
   executablePath:
     process.env.NODE_ENV === "production"
