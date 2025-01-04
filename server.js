@@ -11,17 +11,26 @@ const ITM =
   "+proj=tmerc +lat_0=31.73439361111111 +lon_0=35.20451694444444 +k=1.0000067 +x_0=219529.584 +y_0=626907.39 +ellps=GRS80 +towgs84=0,0,-48,0,0,0,0 +units=m +no_defs";
 const WGS84 = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs";
 
+// הורדת Chrome מותאם אישית (Render)
+const puppeteerConfig = {
+  args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  headless: true,
+  executablePath: process.env.CHROME_EXECUTABLE_PATH || null,
+};
+
 // מאגר Puppeteer
 const BROWSER_POOL_SIZE = 5;
 let browserPool = [];
 
 (async () => {
-  for (let i = 0; i < BROWSER_POOL_SIZE; i++) {
-    const browser = await puppeteer.launch({
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-      headless: true,
-    });
-    browserPool.push(browser);
+  try {
+    for (let i = 0; i < BROWSER_POOL_SIZE; i++) {
+      const browser = await puppeteer.launch(puppeteerConfig);
+      browserPool.push(browser);
+    }
+    console.log("Browser pool initialized successfully.");
+  } catch (error) {
+    console.error("Error initializing browser pool:", error);
   }
 })();
 
@@ -58,10 +67,9 @@ app.post("/convert", async (req, res) => {
       "https://www.govmap.gov.il/?lay=Matara_MItham,Matara_Mig&bs=Matara_MItham%7CACTIVEPROJECTID~";
     const updatedUrl = baseUrl + projectNumber;
 
-    const browser = browserPool.pop() || (await puppeteer.launch({
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-      headless: true,
-    }));
+    const browser =
+      browserPool.pop() ||
+      (await puppeteer.launch(puppeteerConfig));
     const page = await browser.newPage();
     await page.goto(updatedUrl, { waitUntil: "networkidle2" });
 
@@ -87,6 +95,15 @@ app.post("/convert", async (req, res) => {
     console.error("Error:", error);
     return res.status(500).json({ error: "An error occurred during processing." });
   }
+});
+
+// סגירה של הדפדפנים בברירת מחדל
+process.on("SIGINT", async () => {
+  console.log("Closing browser pool...");
+  for (const browser of browserPool) {
+    await browser.close();
+  }
+  process.exit();
 });
 
 // הרצת השרת
