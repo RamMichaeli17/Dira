@@ -10,7 +10,7 @@ const app = express();
 // קבלת ערך ממשתני הסביבה או ברירת מחדל
 const PORT = process.env.PORT || 3000;
 const CHROME_EXECUTABLE_PATH = process.env.CHROME_EXECUTABLE_PATH;
-const BROWSER_POOL_SIZE = parseInt(process.env.BROWSER_POOL_SIZE) || 5;  // לוודא שהערך הוא מספר
+const BROWSER_POOL_SIZE = parseInt(process.env.BROWSER_POOL_SIZE) || 5; // לוודא שהערך הוא מספר
 
 // הגדרות מערכת ITM ו-WGS84
 const ITM =
@@ -58,12 +58,19 @@ app.post("/convert", async (req, res) => {
     if (/^\d+$/.test(projectInput)) {
       projectNumber = projectInput;
     } else if (/https?:\/\//.test(projectInput)) {
-      // חילוץ מספר פרויקט מתוך URL
-      const match = projectInput.match(/\d+/);
-      if (match) {
-        projectNumber = match[0];
-      } else {
-        return res.status(400).json({ error: "No project number found in URL." });
+      try {
+        const url = new URL(projectInput);
+        const params = url.searchParams;
+
+        // חיפוש המספר מתוך ה-URL
+        const projectNumberFromParams = Array.from(params.values()).find((value) => /^\d+$/.test(value));
+        if (projectNumberFromParams) {
+          projectNumber = projectNumberFromParams;
+        } else {
+          return res.status(400).json({ error: "No project number found in URL parameters." });
+        }
+      } catch (error) {
+        return res.status(400).json({ error: "Invalid URL format." });
       }
     } else {
       return res.status(400).json({ error: "Invalid input format. Expected project number or URL." });
