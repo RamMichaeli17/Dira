@@ -97,7 +97,6 @@ app.post("/convert", async (req, res) => {
     const page = await browser.newPage();
 
     console.log("Navigating to GovMap URL...");
-    await page.waitForTimeout(1000);
     await page.goto(updatedUrl, { waitUntil: "networkidle2" });
 
     const govMapUrl = page.url();
