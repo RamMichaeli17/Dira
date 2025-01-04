@@ -6,10 +6,26 @@ const path = require("path");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// הגדרות מערכת ITM ו-WGS84
 const ITM =
   "+proj=tmerc +lat_0=31.73439361111111 +lon_0=35.20451694444444 +k=1.0000067 +x_0=219529.584 +y_0=626907.39 +ellps=GRS80 +towgs84=0,0,-48,0,0,0,0 +units=m +no_defs";
 const WGS84 = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs";
 
+// מאגר Puppeteer
+const BROWSER_POOL_SIZE = 5;
+let browserPool = [];
+
+(async () => {
+  for (let i = 0; i < BROWSER_POOL_SIZE; i++) {
+    const browser = await puppeteer.launch({
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      headless: true,
+    });
+    browserPool.push(browser);
+  }
+})();
+
+// הגדרות Express
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -22,9 +38,11 @@ app.post("/convert", async (req, res) => {
 
   let projectNumber;
 
+  // בדיקת הקלט: האם זה URL או מספר פרויקט
   if (/^\d+$/.test(projectInput)) {
-    projectNumber = projectInput;
+    projectNumber = projectInput; // זה מספר בלבד
   } else if (/https?:\/\//.test(projectInput)) {
+    // זה URL – חילוץ מספר הפרויקט
     const match = projectInput.match(/\d+/);
     if (match) {
       projectNumber = match[0];
@@ -40,10 +58,10 @@ app.post("/convert", async (req, res) => {
       "https://www.govmap.gov.il/?lay=Matara_MItham,Matara_Mig&bs=Matara_MItham%7CACTIVEPROJECTID~";
     const updatedUrl = baseUrl + projectNumber;
 
-    const browser = await puppeteer.launch({
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    const browser = browserPool.pop() || (await puppeteer.launch({
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
       headless: true,
-    });
+    }));
     const page = await browser.newPage();
     await page.goto(updatedUrl, { waitUntil: "networkidle2" });
 
@@ -57,10 +75,12 @@ app.post("/convert", async (req, res) => {
       ]);
 
       const googleMapsUrl = `https://www.google.com/maps/place/${latitude},${longitude}`;
-      await browser.close();
+      await page.close();
+      browserPool.push(browser);
       return res.json({ googleMapsUrl, updatedUrl });
     } else {
-      await browser.close();
+      await page.close();
+      browserPool.push(browser);
       return res.status(500).json({ error: "No coordinates found." });
     }
   } catch (error) {
@@ -69,6 +89,7 @@ app.post("/convert", async (req, res) => {
   }
 });
 
+// הרצת השרת
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });

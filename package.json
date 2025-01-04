@@ -5,7 +5,7 @@
     "express": "^4.21.2",
     "itm-wgs84": "^1.0.1",
     "proj4": "^2.11.0",
-    "puppeteer": "^22.13.1"
+    "puppeteer": "^22.15.0"
   },
   "name": "dira",
   "version": "1.0.0",
