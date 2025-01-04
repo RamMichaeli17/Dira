@@ -9,7 +9,6 @@ const app = express();
 
 // קבלת ערך ממשתני הסביבה או ברירת מחדל
 const PORT = process.env.PORT || 3000;
-const CHROME_EXECUTABLE_PATH = process.env.CHROME_EXECUTABLE_PATH;
 const BROWSER_POOL_SIZE = parseInt(process.env.BROWSER_POOL_SIZE) || 5; // לוודא שהערך הוא מספר
 
 // הגדרות מערכת ITM ו-WGS84
@@ -21,7 +20,7 @@ const WGS84 = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs";
 const puppeteerConfig = {
   args: ["--no-sandbox", "--disable-setuid-sandbox"],
   headless: true,
-  executablePath: CHROME_EXECUTABLE_PATH || null,
+  executablePath: process.env.NODE_ENV === 'production' ? process.env.PUPPETEER_EXECUTABLE_PATH : puppeteer.executablePath(),
 };
 
 // מאגר Puppeteer
