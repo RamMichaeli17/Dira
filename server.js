@@ -22,15 +22,17 @@ const puppeteerConfig = {
       : puppeteer.executablePath(),
 };
 
-// יצירת מופע אחד של Puppeteer
+// יצירת מופע אחד של Puppeteer ודף פתוח
 let browser;
+let page;
 
 (async () => {
   try {
     browser = await puppeteer.launch(puppeteerConfig);
-    console.log("Puppeteer browser instance launched.");
+    page = await browser.newPage();
+    console.log("Puppeteer browser and page instance launched.");
   } catch (error) {
-    console.error("Error launching Puppeteer browser instance:", error);
+    console.error("Error launching Puppeteer browser and page instance:", error);
   }
 })();
 
@@ -90,9 +92,6 @@ app.post("/convert", async (req, res) => {
 
     console.log("Generated GovMap URL:", updatedUrl);
 
-    // שימוש במופע אחד של Puppeteer
-    const page = await browser.newPage();
-
     console.log("Navigating to GovMap URL...");
     let govMapUrl = updatedUrl;
     let attempts = 0;
@@ -136,7 +135,6 @@ app.post("/convert", async (req, res) => {
 
         if (isNaN(itmX) || isNaN(itmY)) {
           console.error("Invalid coordinates received:", { itmX, itmY });
-          await page.close();
           return res.status(500).json({
             error: "Invalid coordinates received from GovMap URL.",
           });
@@ -146,7 +144,6 @@ app.post("/convert", async (req, res) => {
         console.log("Converted coordinates:", { longitude, latitude });
 
         const googleMapsUrl = `https://www.google.com/maps/place/${latitude},${longitude}`;
-        await page.close();
 
         const endTime = Date.now(); // סיום מדידה
         console.log(`Conversion completed in ${endTime - startTime} ms.`); // זמן סיום
@@ -154,14 +151,12 @@ app.post("/convert", async (req, res) => {
         return res.json({ googleMapsUrl, updatedUrl });
       } else {
         console.error("Coordinates format is invalid:", coords);
-        await page.close();
         return res.status(500).json({
           error: "Coordinates format is invalid.",
         });
       }
     } else {
       console.error("No coordinates found in URL.");
-      await page.close();
       return res.status(500).json({
         error: "No coordinates found in URL.",
       });
