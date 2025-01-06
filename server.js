@@ -131,7 +131,7 @@ app.post("/convert", (req, res) => {
 
       while (attempts < maxAttempts) {
         try {
-          await page.goto(updatedUrl, { waitUntil: "networkidle2" });
+          await page.goto(updatedUrl, { waitUntil: "networkidle2", timeout: 60000 });
 
           govMapUrl = page.url();
           console.log("GovMap redirected URL:", govMapUrl);
