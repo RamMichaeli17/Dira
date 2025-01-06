@@ -39,134 +39,164 @@ let page;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-app.post("/convert", async (req, res) => {
-  try {
-    const startTime = Date.now(); // התחלת מדידה
-    const { projectInput } = req.body;
-    console.log("Received project input:", projectInput);
+// מערך תור
+let queue = [];
 
-    if (!projectInput) {
-      console.error("No input provided.");
-      return res.status(400).json({
-        error: "Invalid input. Project input is required.",
+app.post("/convert", (req, res) => {
+  const startTime = Date.now(); // התחלת מדידה
+  const { projectInput } = req.body;
+  console.log("Received project input:", projectInput);
+
+  if (!projectInput) {
+    console.error("No input provided.");
+    return res.status(400).json({
+      error: "Invalid input. Project input is required.",
+    });
+  }
+
+  // הוספת הבקשה לתור
+  queue.push({ req, res });
+
+  // אם אין בקשות בתהליך, התחיל את התהליך
+  if (queue.length === 1) {
+    processQueue();
+  }
+
+  function processQueue() {
+    // נבדוק אם יש בקשה בתור
+    if (queue.length > 0) {
+      const { req, res } = queue[0]; // קבלת הבקשה הראשונה בתור
+
+      handleRequest(req, res).then(() => {
+        // אחרי שהבקשה הסתיימה, נסיר אותה מהתור
+        queue.shift();
+
+        // נמשיך לטפל בבקשות הבאות בתור
+        processQueue();
+      }).catch(error => {
+        console.error("Error during conversion:", error);
+        queue.shift(); // הוצאת הבקשה גם במקרה של שגיאה
+        res.status(500).json({
+          error: "An unexpected error occurred during processing. Please try again later.",
+        });
+        processQueue();
       });
     }
+  }
 
-    let projectNumber;
+  async function handleRequest(req, res) {
+    try {
+      const { projectInput } = req.body;
+      let projectNumber;
 
-    if (/^\d+$/.test(projectInput)) {
-      projectNumber = projectInput;
-    } else if (/https?:\/\//.test(projectInput)) {
-      try {
-        const url = new URL(projectInput);
-        console.log("Parsed URL:", url.href);
+      if (/^\d+$/.test(projectInput)) {
+        projectNumber = projectInput;
+      } else if (/https?:\/\//.test(projectInput)) {
+        try {
+          const url = new URL(projectInput);
+          console.log("Parsed URL:", url.href);
 
-        const params = url.searchParams;
-        const projectNumberFromParams = Array.from(params.values()).find(
-          (value) => /^\d+$/.test(value)
-        );
-
-        if (projectNumberFromParams) {
-          projectNumber = projectNumberFromParams;
-          console.log("Extracted project number from URL:", projectNumber);
-        } else {
-          console.error("No project number found in URL parameters.");
-          return res.status(400).json({
-            error: "No project number found in URL parameters.",
-          });
+          const pathSegments = url.pathname.split("/").filter(segment => /^\d+$/.test(segment));
+          
+          if (pathSegments.length >= 2) {
+            projectNumber = pathSegments[0];
+            console.log("Extracted project number from URL path:", projectNumber);
+          } else {
+            console.error("No project number found in URL path.");
+            return res.status(400).json({
+              error: "No project number found in URL path.",
+            });
+          }
+        } catch (error) {
+          console.error("Invalid URL format:", error);
+          return res.status(400).json({ error: "Invalid URL format." });
         }
-      } catch (error) {
-        console.error("Invalid URL format:", error);
-        return res.status(400).json({ error: "Invalid URL format." });
-      }
-    } else {
-      console.error("Invalid input format:", projectInput);
-      return res.status(400).json({
-        error: "Invalid input format. Expected project number or URL.",
-      });
-    }
-
-    const baseUrl =
-      "https://www.govmap.gov.il/?lay=Matara_MItham,Matara_Mig&bs=Matara_MItham%7CACTIVEPROJECTID~";
-    const updatedUrl = baseUrl + projectNumber;
-
-    console.log("Generated GovMap URL:", updatedUrl);
-
-    console.log("Navigating to GovMap URL...");
-    let govMapUrl = updatedUrl;
-    let attempts = 0;
-    const maxAttempts = 3; // מספר ניסיונות
-
-    while (attempts < maxAttempts) {
-      try {
-        await page.goto(updatedUrl, { waitUntil: "networkidle2" });
-
-        govMapUrl = page.url();
-        console.log("GovMap redirected URL:", govMapUrl);
-
-        if (govMapUrl !== updatedUrl) {
-          // אם ה-URL השתנה, סיימנו
-          break;
-        } else {
-          console.log("URL is the same as updated URL. Retrying...");
-          attempts++; // המתן 2 שניות לפני שננסה שוב
-        }
-      } catch (error) {
-        console.error("Error during page.goto:", error);
-        attempts++; // המתן 2 שניות לפני שננסה שוב
-      }
-    }
-
-    if (attempts === maxAttempts) {
-      console.error("Failed to get a redirected URL after several attempts.");
-      return res.status(500).json({
-        error: "Failed to get redirected URL after several attempts.",
-      });
-    }
-
-    // קוד להמשך הפעולה אחרי שה-URL השתנה
-    if (govMapUrl.includes("C")) {
-      const coords = govMapUrl.split("C")[1]?.split(",");
-      if (coords?.length === 2) {
-        const itmX = parseFloat(coords[0]);
-        const itmY = parseFloat(coords[1]);
-
-        console.log("Extracted coordinates:", { itmX, itmY });
-
-        if (isNaN(itmX) || isNaN(itmY)) {
-          console.error("Invalid coordinates received:", { itmX, itmY });
-          return res.status(500).json({
-            error: "Invalid coordinates received from GovMap URL.",
-          });
-        }
-
-        const [longitude, latitude] = proj4(ITM, WGS84, [itmX, itmY]);
-        console.log("Converted coordinates:", { longitude, latitude });
-
-        const googleMapsUrl = `https://www.google.com/maps/place/${latitude},${longitude}`;
-
-        const endTime = Date.now(); // סיום מדידה
-        console.log(`Conversion completed in ${endTime - startTime} ms.`); // זמן סיום
-
-        return res.json({ googleMapsUrl, updatedUrl });
       } else {
-        console.error("Coordinates format is invalid:", coords);
-        return res.status(500).json({
-          error: "Coordinates format is invalid.",
+        console.error("Invalid input format:", projectInput);
+        return res.status(400).json({
+          error: "Invalid input format. Expected project number or URL.",
         });
       }
-    } else {
-      console.error("No coordinates found in URL.");
+
+      const baseUrl =
+        "https://www.govmap.gov.il/?lay=Matara_MItham,Matara_Mig&bs=Matara_MItham%7CACTIVEPROJECTID~";
+      const updatedUrl = baseUrl + projectNumber;
+
+      console.log("Generated GovMap URL:", updatedUrl);
+
+      console.log("Navigating to GovMap URL...");
+      let govMapUrl = updatedUrl;
+      let attempts = 0;
+      const maxAttempts = 3;
+
+      while (attempts < maxAttempts) {
+        try {
+          await page.goto(updatedUrl, { waitUntil: "networkidle2" });
+
+          govMapUrl = page.url();
+          console.log("GovMap redirected URL:", govMapUrl);
+
+          if (govMapUrl !== updatedUrl) {
+            break;
+          } else {
+            console.log("URL is the same as updated URL. Retrying...");
+            attempts++;
+          }
+        } catch (error) {
+          console.error("Error during page.goto:", error);
+          attempts++;
+        }
+      }
+
+      if (attempts === maxAttempts) {
+        console.error("Failed to get a redirected URL after several attempts.");
+        return res.status(500).json({
+          error: "Failed to get redirected URL after several attempts.",
+        });
+      }
+
+      if (govMapUrl.includes("C")) {
+        const coords = govMapUrl.split("C")[1]?.split(",");
+        if (coords?.length === 2) {
+          const itmX = parseFloat(coords[0]);
+          const itmY = parseFloat(coords[1]);
+
+          console.log("Extracted coordinates:", { itmX, itmY });
+
+          if (isNaN(itmX) || isNaN(itmY)) {
+            console.error("Invalid coordinates received:", { itmX, itmY });
+            return res.status(500).json({
+              error: "Invalid coordinates received from GovMap URL.",
+            });
+          }
+
+          const [longitude, latitude] = proj4(ITM, WGS84, [itmX, itmY]);
+          console.log("Converted coordinates:", { longitude, latitude });
+
+          const googleMapsUrl = `https://www.google.com/maps/place/${latitude},${longitude}`;
+
+          const endTime = Date.now(); // סיום מדידה
+          console.log(`Conversion completed in ${endTime - startTime} ms.`);
+
+          return res.json({ googleMapsUrl, updatedUrl });
+        } else {
+          console.error("Coordinates format is invalid:", coords);
+          return res.status(500).json({
+            error: "Coordinates format is invalid.",
+          });
+        }
+      } else {
+        console.error("No coordinates found in URL.");
+        return res.status(500).json({
+          error: "No coordinates found in URL.",
+        });
+      }
+    } catch (error) {
+      console.error("Error during conversion:", error);
       return res.status(500).json({
-        error: "No coordinates found in URL.",
+        error: "An unexpected error occurred during processing. Please try again later.",
       });
     }
-  } catch (error) {
-    console.error("Error during conversion:", error);
-    return res.status(500).json({
-      error:
-        "An unexpected error occurred during processing. Please try again later.",
-    });
   }
 });
 
