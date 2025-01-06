@@ -55,7 +55,7 @@ const startConversion = async () => {
       if (googleMapsMatch) {
         const lat = googleMapsMatch[1];
         const lng = googleMapsMatch[2];
-        const googleMapsEmbedUrl = `https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d4063.3509927002774!2d${lng}!3d${lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zMzHCsDQwJzA5LjQiTiAzNMKwMzUnNDguMCJF!5e1!3m2!1sen!2sil`;
+        const googleMapsEmbedUrl = `https://www.google.com/maps?q=${lat},${lng}&hl=en&output=embed`;
         googleMapFrame.src = googleMapsEmbedUrl;
         googleMapPreviewDiv.style.display = "block";
       }
