@@ -27,7 +27,23 @@ const startConversion = async () => {
   googleMapPreviewDiv.style.display = "none";
 
   // Start the queue status update
-  updateQueueStatus();  // התחלת עדכון מצב התור
+  const queueStatusDiv = document.getElementById("queueStatus");
+  let isQueueEmpty = false;  // משתנה חדש שמציין אם התור היה ריק בזמן שהבקשה הוגשה
+  try {
+    const response = await fetch("/queue-status");
+    const data = await response.json();
+
+    // אם התור ריק, לא נציג את מצב התור
+    if (data.queueLength > 0) {
+      queueStatusDiv.innerHTML = `Queue length: <span>${data.queueLength}</span> requests in queue.`;
+      queueStatusDiv.style.display = "block";
+    } else {
+      isQueueEmpty = true;
+    }
+  } catch (error) {
+    console.error("Error fetching queue status:", error);
+    queueStatusDiv.innerHTML = "Error fetching queue status.";
+  }
 
   try {
     const response = await fetch("/convert", {
@@ -70,6 +86,14 @@ const startConversion = async () => {
     outputDiv.innerHTML = `<p>An error occurred.</p>`;
   } finally {
     loadingDiv.style.display = "none"; // Hide loading spinner after completion
+    if (isQueueEmpty) {
+      queueStatusDiv.style.display = "none"; // אם התור היה ריק, נסגור את מצב התור
+    }
+  }
+
+  // Start the queue status update
+  if (!isQueueEmpty) {
+    updateQueueStatus();  // עדכון מצב התור אם התור לא היה ריק
   }
 };
 
@@ -86,6 +110,8 @@ const updateQueueStatus = async () => {
 
     if (data.queueLength > 0) {
       setTimeout(updateQueueStatus, 2000); // עדכון כל 2 שניות
+    } else {
+      queueStatusDiv.style.display = "none"; // אם התור ריק, נסגור את מצב התור
     }
   } catch (error) {
     console.error("Error fetching queue status:", error);
