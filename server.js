@@ -97,7 +97,7 @@ app.post("/convert", (req, res) => {
           console.log("Parsed URL:", url.href);
 
           const pathSegments = url.pathname.split("/").filter(segment => /^\d+$/.test(segment));
-          
+
           if (pathSegments.length >= 2) {
             projectNumber = pathSegments[0];
             console.log("Extracted project number from URL path:", projectNumber);
@@ -198,6 +198,11 @@ app.post("/convert", (req, res) => {
       });
     }
   }
+});
+
+// הוספת endpoint שמחזיר את מספר הבקשות בתור
+app.get("/queue-status", (req, res) => {
+  res.json({ queueLength: queue.length });
 });
 
 process.on("SIGINT", async () => {

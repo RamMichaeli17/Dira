@@ -26,6 +26,9 @@ const startConversion = async () => {
   govMapPreviewDiv.style.display = "none";
   googleMapPreviewDiv.style.display = "none";
 
+  // Start the queue status update
+  updateQueueStatus();  // התחלת עדכון מצב התור
+
   try {
     const response = await fetch("/convert", {
       method: "POST",
@@ -67,6 +70,26 @@ const startConversion = async () => {
     outputDiv.innerHTML = `<p>An error occurred.</p>`;
   } finally {
     loadingDiv.style.display = "none"; // Hide loading spinner after completion
+  }
+};
+
+// עדכון מצב התור
+const updateQueueStatus = async () => {
+  const queueStatusDiv = document.getElementById("queueStatus");
+  try {
+    const response = await fetch("/queue-status");
+    const data = await response.json();
+
+    // הצגת מספר הבקשות בתור
+    queueStatusDiv.innerHTML = `Queue length: <span>${data.queueLength}</span> requests in queue.`;
+    queueStatusDiv.style.display = "block";
+
+    if (data.queueLength > 0) {
+      setTimeout(updateQueueStatus, 2000); // עדכון כל 2 שניות
+    }
+  } catch (error) {
+    console.error("Error fetching queue status:", error);
+    queueStatusDiv.innerHTML = "Error fetching queue status.";
   }
 };
 
