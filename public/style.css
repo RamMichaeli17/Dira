@@ -156,3 +156,10 @@ footer {
 .queue-status span {
   font-weight: bold;
 }
+
+button:disabled {
+  background-color: #ccc; /* רקע אפור */
+  cursor: not-allowed; /* סמן "לא מותר" */
+  opacity: 0.6; /* שקיפות */
+}
+

@@ -1,11 +1,15 @@
 // פונקציה שמתחילה את תהליך החיפוש
 const startConversion = async () => {
   const projectInput = document.getElementById("projectInput").value.trim();
+  const convertButton = document.getElementById("convertButton"); // אחיזה בכפתור ההמרה
 
   if (!projectInput) {
     alert("Please enter a valid URL or project number.");
     return;
   }
+
+  // נטרול הכפתור כדי למנוע לחיצה כפולה
+  convertButton.disabled = true;
 
   // Extract project number from URL if necessary
   let projectNumber = projectInput;
@@ -21,14 +25,14 @@ const startConversion = async () => {
   const googleMapPreviewDiv = document.getElementById("googleMapPreview");
   const govMapFrame = document.getElementById("govMapFrame");
   const googleMapFrame = document.getElementById("googleMapFrame");
+  const queueStatusDiv = document.getElementById("queueStatus");
+
   loadingDiv.style.display = "block";
   outputDiv.innerHTML = "";
   govMapPreviewDiv.style.display = "none";
   googleMapPreviewDiv.style.display = "none";
 
-  // Start the queue status update
-  const queueStatusDiv = document.getElementById("queueStatus");
-  let isQueueEmpty = false;  // משתנה חדש שמציין אם התור היה ריק בזמן שהבקשה הוגשה
+  let isQueueEmpty = false; // משתנה חדש שמציין אם התור היה ריק בזמן שהבקשה הוגשה
   try {
     const response = await fetch("/queue-status");
     const data = await response.json();
@@ -68,7 +72,7 @@ const startConversion = async () => {
       const govMapUrl = `https://www.govmap.gov.il/map.html?lay=Matara_MItham,Matara_Mig&bs=Matara_MItham|ACTIVEPROJECTID~${projectNumber}`;
       govMapFrame.src = govMapUrl;
       govMapPreviewDiv.style.display = "block";
-      
+
       // Update Google Maps preview
       const googleMapsMatch = data.googleMapsUrl.match(/place\/(-?\d+\.\d+),(-?\d+\.\d+)/);
       if (googleMapsMatch) {
@@ -89,11 +93,12 @@ const startConversion = async () => {
     if (isQueueEmpty) {
       queueStatusDiv.style.display = "none"; // אם התור היה ריק, נסגור את מצב התור
     }
+    convertButton.disabled = false; // הפעלת הכפתור מחדש לאחר שהבקשה הסתיימה
   }
 
   // Start the queue status update
   if (!isQueueEmpty) {
-    updateQueueStatus();  // עדכון מצב התור אם התור לא היה ריק
+    updateQueueStatus(); // עדכון מצב התור אם התור לא היה ריק
   }
 };
 
