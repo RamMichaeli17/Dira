@@ -49,7 +49,7 @@ input[type="text"]:focus {
   outline: none;
 }
 
-/* Button */
+/* Buttons */
 button {
   width: 100%;
   padding: 12px;
@@ -64,6 +64,22 @@ button {
 
 button:hover {
   background-color: #1b5bbf;
+}
+
+button:disabled {
+  background-color: #ccc; /* רקע אפור */
+  cursor: not-allowed; /* סמן "לא מותר" */
+  opacity: 0.6; /* שקיפות */
+}
+
+/* Cancel Button */
+#cancelButton {
+  background-color: #e74c3c; /* אדום */
+  margin-top: 10px; /* רווח מהכפתור הראשון */
+}
+
+#cancelButton:hover {
+  background-color: #c0392b; /* אדום כהה יותר */
 }
 
 /* Loading Spinner */
@@ -156,10 +172,3 @@ footer {
 .queue-status span {
   font-weight: bold;
 }
-
-button:disabled {
-  background-color: #ccc; /* רקע אפור */
-  cursor: not-allowed; /* סמן "לא מותר" */
-  opacity: 0.6; /* שקיפות */
-}
-

@@ -1,7 +1,11 @@
+// משתנה גלובלי לאחסון AbortController
+let abortController = null;
+
 // פונקציה שמתחילה את תהליך החיפוש
 const startConversion = async () => {
   const projectInput = document.getElementById("projectInput").value.trim();
   const convertButton = document.getElementById("convertButton"); // אחיזה בכפתור ההמרה
+  const cancelButton = document.getElementById("cancelButton"); // אחיזה בכפתור הביטול
 
   if (!projectInput) {
     alert("Please enter a valid URL or project number.");
@@ -10,6 +14,14 @@ const startConversion = async () => {
 
   // נטרול הכפתור כדי למנוע לחיצה כפולה
   convertButton.disabled = true;
+  cancelButton.style.display = "inline-block"; // הצגת כפתור הביטול
+
+  // יצירת AbortController חדש
+  if (abortController) {
+    abortController.abort(); // ביטול פעולה קודמת אם הייתה
+  }
+  abortController = new AbortController();
+  const signal = abortController.signal;
 
   // Extract project number from URL if necessary
   let projectNumber = projectInput;
@@ -56,6 +68,7 @@ const startConversion = async () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ projectInput: projectNumber }),
+      signal, // העברת ה-signal כדי לאפשר ביטול
     });
 
     const data = await response.json();
@@ -86,19 +99,32 @@ const startConversion = async () => {
       outputDiv.innerHTML = `<p>Error: ${data.error}</p>`;
     }
   } catch (error) {
-    console.error("Error:", error);
-    outputDiv.innerHTML = `<p>An error occurred.</p>`;
+    if (signal.aborted) {
+      outputDiv.innerHTML = `<p>Request canceled.</p>`;
+    } else {
+      console.error("Error:", error);
+      outputDiv.innerHTML = `<p>An error occurred.</p>`;
+    }
   } finally {
     loadingDiv.style.display = "none"; // Hide loading spinner after completion
     if (isQueueEmpty) {
       queueStatusDiv.style.display = "none"; // אם התור היה ריק, נסגור את מצב התור
     }
     convertButton.disabled = false; // הפעלת הכפתור מחדש לאחר שהבקשה הסתיימה
+    cancelButton.style.display = "none"; // הסתרת כפתור הביטול
+    abortController = null; // איפוס ה-AbortController
   }
 
   // Start the queue status update
   if (!isQueueEmpty) {
     updateQueueStatus(); // עדכון מצב התור אם התור לא היה ריק
+  }
+};
+
+// פונקציה לביטול הפעולה
+const cancelConversion = () => {
+  if (abortController) {
+    abortController.abort();
   }
 };
 
@@ -126,6 +152,9 @@ const updateQueueStatus = async () => {
 
 // לחיצה על כפתור ההמרה
 document.getElementById("convertButton").addEventListener("click", startConversion);
+
+// לחיצה על כפתור הביטול
+document.getElementById("cancelButton").addEventListener("click", cancelConversion);
 
 // לחיצה על Enter בתיבת הטקסט
 document.getElementById("projectInput").addEventListener("keydown", (event) => {
