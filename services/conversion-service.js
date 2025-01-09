@@ -15,22 +15,28 @@ class ConversionService {
    */
   async processProjectInput(projectInput) {
     let newPage = null;
-    
+    const startTime = Date.now();
+
     try {
+      console.log("Received project input:", projectInput);
+
       // Extract project and lottery numbers
-      const { projectNumber, lotteryNumber } = await this.extractProjectDetails(projectInput);
-      
+      const { projectNumber, lotteryNumber } = await this.extractProjectDetails(
+        projectInput
+      );
+
       // Get coordinates from GovMap
       newPage = await browserService.createNewPage();
       const coordinates = await this.getCoordinates(projectNumber, newPage);
-      
+
       // Generate final URLs
       const urls = this.generateUrls(projectNumber, coordinates);
-      
+
       // Cleanup
       await newPage.close();
       await browserService.resetMainPage();
-      
+
+      console.log(`Conversion completed in ${Date.now() - startTime} ms.`);
       return urls;
     } catch (error) {
       // Ensure cleanup on error
@@ -51,18 +57,20 @@ class ConversionService {
       const projectData = await this.findProjectByLottery(projectInput);
       return projectData;
     }
-    
+
     if (/^\d{5}$/.test(projectInput)) {
       // Handle 5-digit project number
       return { projectNumber: projectInput, lotteryNumber: null };
     }
-    
+
     if (/https?:\/\//.test(projectInput)) {
       // Handle URL input
       return this.extractFromUrl(projectInput);
     }
-    
-    throw new Error("Invalid input format. Expected project number, lottery number, or URL.");
+
+    throw new Error(
+      "Invalid input format. Expected project number, lottery number, or URL."
+    );
   }
 
   /**
@@ -74,9 +82,11 @@ class ConversionService {
     const links = await browserService.mainPage.evaluate((lottery) => {
       const anchors = Array.from(document.querySelectorAll("a.details-button"));
       return anchors
-        .map(anchor => anchor.href)
-        .filter(href => {
-          const regex = new RegExp(`https://www\\.dira\\.moch\\.gov\\.il/\\d{5}/${lottery}/ProjectInfo`);
+        .map((anchor) => anchor.href)
+        .filter((href) => {
+          const regex = new RegExp(
+            `https://www\\.dira\\.moch\\.gov\\.il/\\d{5}/${lottery}/ProjectInfo`
+          );
           return regex.test(href);
         });
     }, lotteryNumber);
@@ -92,7 +102,7 @@ class ConversionService {
 
     return {
       projectNumber: matches[1],
-      lotteryNumber: matches[2]
+      lotteryNumber: matches[2],
     };
   }
 
@@ -106,7 +116,7 @@ class ConversionService {
       const urlObj = new URL(url);
       const pathSegments = urlObj.pathname
         .split("/")
-        .filter(segment => /^\d+$/.test(segment));
+        .filter((segment) => /^\d+$/.test(segment));
 
       if (pathSegments.length < 2) {
         throw new Error("Invalid URL format");
@@ -114,7 +124,7 @@ class ConversionService {
 
       return {
         projectNumber: pathSegments[0],
-        lotteryNumber: pathSegments[1]
+        lotteryNumber: pathSegments[1],
       };
     } catch (error) {
       throw new Error(`Invalid URL format: ${error.message}`);
@@ -129,6 +139,9 @@ class ConversionService {
    */
   async getCoordinates(projectNumber, page) {
     const baseUrl = `https://www.govmap.gov.il/?lay=Matara_MItham,Matara_Mig&bs=Matara_MItham%7CACTIVEPROJECTID~${projectNumber}`;
+    console.log("Generated GovMap URL:", baseUrl);
+    console.log("Navigating to GovMap URL...");
+
     let attempts = 0;
     const maxAttempts = 3;
 
@@ -136,17 +149,19 @@ class ConversionService {
       try {
         await page.goto(baseUrl, { waitUntil: "networkidle2", timeout: 60000 });
         const finalUrl = page.url();
+        console.log("GovMap redirected URL:", finalUrl);
 
         if (finalUrl.includes("C")) {
           const coords = finalUrl.split("C")[1]?.split(",");
           if (coords?.length === 2) {
             const [x, y] = coords.map(parseFloat);
             if (!isNaN(x) && !isNaN(y)) {
+              console.log("Extracted coordinates:", { itmX: x, itmY: y });
               return { x, y };
             }
           }
         }
-        
+
         attempts++;
       } catch (error) {
         attempts++;
@@ -164,12 +179,16 @@ class ConversionService {
    * @returns {Object} Generated URLs
    */
   generateUrls(projectNumber, coordinates) {
-    const [longitude, latitude] = proj4(ITM, WGS84, [coordinates.x, coordinates.y]);
-    
+    const [longitude, latitude] = proj4(ITM, WGS84, [
+      coordinates.x,
+      coordinates.y,
+    ]);
+    console.log("Converted coordinates:", { longitude, latitude });
+
     return {
       googleMapsUrl: `https://www.google.com/maps/place/${latitude},${longitude}`,
       iframeUrl: `https://www.govmap.gov.il/map.html?lay=Matara_MItham,Matara_Mig&bs=Matara_MItham|ACTIVEPROJECTID~${projectNumber}`,
-      updatedUrl: `https://www.govmap.gov.il/?lay=Matara_MItham,Matara_Mig&bs=Matara_MItham%7CACTIVEPROJECTID~${projectNumber}`
+      updatedUrl: `https://www.govmap.gov.il/?lay=Matara_MItham,Matara_Mig&bs=Matara_MItham%7CACTIVEPROJECTID~${projectNumber}`,
     };
   }
 }
