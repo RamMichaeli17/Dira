@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Project Link Converter</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
   <div class="container">
     <h1>Project Link Converter</h1>
@@ -19,22 +21,23 @@
       <div class="spinner"></div>
       <p>Processing...</p>
     </div>
-    
+
     <div id="queueStatus" style="display: none;">
       <p>Requests in queue: <span id="queueLength">0</span></p>
     </div>
-    
+
     <div class="output" id="output"></div>
-    
+
     <div class="map-preview" id="mapPreview" style="display: none;">
       <iframe id="govMapFrame" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" style="width:100%" height="320"></iframe>
     </div>
-    
+
     <div class="map-preview" id="googleMapPreview" style="display: none;">
       <iframe id="googleMapFrame" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" style="width:100%" height="320"></iframe>
     </div>
   </div>
   <footer>&copy; 2025 Project Converter Tool - By Ram Michaeli</footer>
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
+
 </html>
