@@ -70,9 +70,18 @@ const startConversion = async () => {
 /**
  * Cancel ongoing conversion
  */
-const cancelConversion = () => {
+const cancelConversion = async () => {
   if (abortController) {
     abortController.abort();
+    try {
+      await fetch("/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      console.log("Request canceled successfully");
+    } catch (error) {
+      console.error("Error canceling request:", error);
+    }
   }
 };
 

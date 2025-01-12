@@ -1,5 +1,4 @@
 // routes/conversion-routes.js
-
 const express = require("express");
 const router = express.Router();
 const queueService = require("../services/queue-service");
@@ -12,23 +11,38 @@ async function processQueue() {
   // Only process if there are items in queue and not already processing
   if (queueService.getLength() > 0 && !queueService.isCurrentlyProcessing()) {
     queueService.setProcessingStatus(true);
-    
+    const currentRequest = queueService.peek();
+
     try {
-      const { req, res } = queueService.peek();
+      const { req, res, abortController } = currentRequest;
       const { projectInput } = req.body;
-      
-      const result = await conversionService.processProjectInput(projectInput);
-      res.json(result);
+
+      const result = await conversionService.processProjectInput(
+        projectInput,
+        abortController.signal
+      );
+
+      // Check if request was canceled before sending response
+      if (!abortController.signal.aborted) {
+        res.json(result);
+      } else {
+        console.log("Request was canceled, response not sent");
+      }
     } catch (error) {
-      const { res } = queueService.peek();
-      console.error("Error processing request:", error);
-      res.status(500).json({
-        error: "An unexpected error occurred during processing. Please try again later."
-      });
+      const { res, abortController } = currentRequest;
+      if (!abortController.signal.aborted) {
+        console.error("Error processing request:", error);
+        res.status(500).json({
+          error:
+            error.message || "An unexpected error occurred during processing",
+        });
+      } else {
+        console.log("Request was canceled, error response not sent");
+      }
     } finally {
       queueService.remove();
       queueService.setProcessingStatus(false);
-      
+
       // Process next request if available
       if (queueService.getLength() > 0) {
         processQueue();
@@ -48,16 +62,21 @@ router.post("/convert", async (req, res) => {
   // Validate input
   if (!projectInput) {
     console.error("Missing project input");
-    return res.status(400).json({ 
-      error: "Invalid input. Project input is required." 
+    return res.status(400).json({
+      error: "Invalid input. Project input is required.",
     });
   }
 
   console.log("Received project input:", projectInput);
 
-  // Add request to queue
-  queueService.add({ req, res });
-  console.log(`Request added to queue. Processing time: ${Date.now() - startTime}ms`);
+  // Create abort controller for this request
+  const abortController = new AbortController();
+
+  // Add request to queue with abort controller
+  queueService.add({ req, res, abortController });
+  console.log(
+    `Request added to queue. Processing time: ${Date.now() - startTime}ms`
+  );
 
   // Start processing if this is the only request
   if (queueService.getLength() === 1) {
@@ -66,13 +85,27 @@ router.post("/convert", async (req, res) => {
 });
 
 /**
+ * Route to cancel current request
+ * POST /cancel
+ */
+router.post("/cancel", (req, res) => {
+  const currentRequest = queueService.peek();
+  if (currentRequest?.abortController) {
+    currentRequest.abortController.abort();
+    res.json({ message: "Request canceled successfully" });
+  } else {
+    res.status(404).json({ error: "No active request to cancel" });
+  }
+});
+
+/**
  * Route to get current queue status
  * GET /queue-status
  */
 router.get("/queue-status", (req, res) => {
-  res.json({ 
+  res.json({
     queueLength: queueService.getLength(),
-    isProcessing: queueService.isCurrentlyProcessing()
+    isProcessing: queueService.isCurrentlyProcessing(),
   });
 });
 
