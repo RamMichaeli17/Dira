@@ -1,6 +1,6 @@
 /* General Styles */
 body {
-  font-family: 'Roboto', Arial, sans-serif;
+  font-family: "Roboto", Arial, sans-serif;
   margin: 0;
   padding: 0;
   background: #f4f7f9;
@@ -67,19 +67,19 @@ button:hover {
 }
 
 button:disabled {
-  background-color: #ccc; /* רקע אפור */
-  cursor: not-allowed; /* סמן "לא מותר" */
-  opacity: 0.6; /* שקיפות */
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 /* Cancel Button */
 #cancelButton {
-  background-color: #e74c3c; /* אדום */
-  margin-top: 10px; /* רווח מהכפתור הראשון */
+  background-color: #e74c3c;
+  margin-top: 10px;
 }
 
 #cancelButton:hover {
-  background-color: #c0392b; /* אדום כהה יותר */
+  background-color: #c0392b;
 }
 
 /* Loading Spinner */
@@ -100,8 +100,87 @@ button:disabled {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Queue Status */
+.queue-status {
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.queue-progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.queue-steps {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin: 0 10px;
+}
+
+.step {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #e9ecef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  color: #6c757d;
+  transition: all 0.3s ease;
+}
+
+.step.active {
+  background-color: #2d89ef;
+  color: white;
+}
+
+.step.completed {
+  background-color: #28a745;
+  color: white;
+}
+
+.step-connector {
+  flex-grow: 1;
+  height: 2px;
+  background-color: #e9ecef;
+  margin: 0 5px;
+}
+
+.step-connector.active {
+  background-color: #2d89ef;
+}
+
+.queue-message {
+  margin-top: 15px;
+  text-align: center;
+  color: #495057;
+  font-size: 14px;
+}
+
+.queue-time {
+  color: #6c757d;
+  font-size: 12px;
+  margin-top: 5px;
+  text-align: center;
 }
 
 /* Output */
@@ -150,25 +229,5 @@ footer {
   background-color: #f0f4f8;
   padding: 10px 0;
   border-top: 1px solid #ddd;
-  font-weight: bold;
-}
-
-/* Queue Status */
-.queue-status {
-  display: none;
-  margin-top: 20px;
-  padding: 10px;
-  background-color: #e7f3fe;
-  border: 1px solid #b3d7f6;
-  border-radius: 8px;
-  font-size: 14px;
-  color: #0077cc;
-}
-
-.queue-status p {
-  margin: 0;
-}
-
-.queue-status span {
   font-weight: bold;
 }

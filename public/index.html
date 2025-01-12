@@ -14,30 +14,43 @@
     <p>Enter a project URL or number below:</p>
     <input type="text" id="projectInput" placeholder="Enter project URL or number..." />
     <button id="convertButton">Convert</button>
-    <button id="cancelButton" style="display: none;">Cancel</button> <!-- כפתור ביטול -->
+    <button id="cancelButton" style="display: none;">Cancel</button>
 
-    <!-- Loading and Queue Status -->
+    <!-- Loading Spinner -->
     <div class="loading" id="loading" style="display: none;">
       <div class="spinner"></div>
       <p>Processing...</p>
     </div>
 
-    <div id="queueStatus" style="display: none;">
-      <p>Requests in queue: <span id="queueLength">0</span></p>
-    </div>
+    <!-- Queue Status -->
+    <div id="queueStatus" class="queue-status" style="display: none;">
+      <div class="queue-progress">
+        <div class="queue-steps">
+          <div class="step completed">1</div>
+          <div class="step-connector"></div>
+          <div class="step">2</div>
+          <div class="step-connector"></div>
+          <div class="step">3</div>
+        </div>
+      </div>
+      <div class="queue-message">Your request is in queue</div>
+      <div class="queue-time">Estimated wait time:
 
-    <div class="output" id="output"></div>
+        < 1 minute</div>
+      </div>
 
-    <div class="map-preview" id="mapPreview" style="display: none;">
-      <iframe id="govMapFrame" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" style="width:100%" height="320"></iframe>
-    </div>
+      <div class="output" id="output"></div>
 
-    <div class="map-preview" id="googleMapPreview" style="display: none;">
-      <iframe id="googleMapFrame" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" style="width:100%" height="320"></iframe>
+      <div class="map-preview" id="mapPreview" style="display: none;">
+        <iframe id="govMapFrame" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" style="width:100%" height="320"></iframe>
+      </div>
+
+      <div class="map-preview" id="googleMapPreview" style="display: none;">
+        <iframe id="googleMapFrame" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" style="width:100%" height="320"></iframe>
+      </div>
     </div>
-  </div>
-  <footer>&copy; 2025 Project Converter Tool - By Ram Michaeli</footer>
-  <script type="module" src="script.js"></script>
+    <footer>&copy; 2025 Project Converter Tool - By Ram Michaeli</footer>
+    <script type="module" src="script.js"></script>
 </body>
 
 </html>
