@@ -9,6 +9,7 @@ class QueueService {
     this.queue = [];
     this.isProcessing = false;
     this.canceledRequests = new Set();
+    this.currentRequestId = null;
   }
 
   /**
@@ -17,8 +18,14 @@ class QueueService {
    * @returns {number} Current queue length
    */
   add(request) {
+    // Extract request ID from headers
+    const requestId = request.req.headers["x-request-id"];
+    request.id = requestId;
+
     this.queue.push(request);
-    console.log(`Request added to queue. Queue length: ${this.queue.length}`);
+    console.log(
+      `Request ${requestId} added to queue. Queue length: ${this.queue.length}`
+    );
     return this.queue.length;
   }
 
@@ -28,9 +35,12 @@ class QueueService {
    */
   remove() {
     const request = this.queue.shift();
-    console.log(
-      `Request removed from queue. Queue length: ${this.queue.length}`
-    );
+    if (request) {
+      this.currentRequestId = null;
+      console.log(
+        `Request ${request.id} removed from queue. Queue length: ${this.queue.length}`
+      );
+    }
     return request;
   }
 
@@ -59,11 +69,24 @@ class QueueService {
   }
 
   /**
-   * Set processing status
+   * Set processing status and current request ID
    * @param {boolean} status New processing status
    */
   setProcessingStatus(status) {
     this.isProcessing = status;
+    if (status && this.queue[0]) {
+      this.currentRequestId = this.queue[0].id;
+    } else {
+      this.currentRequestId = null;
+    }
+  }
+
+  /**
+   * Get current processing request ID
+   * @returns {string|null} Current request ID or null
+   */
+  getCurrentRequestId() {
+    return this.currentRequestId;
   }
 
   /**
@@ -73,6 +96,7 @@ class QueueService {
     this.queue = [];
     this.isProcessing = false;
     this.canceledRequests.clear();
+    this.currentRequestId = null;
     console.log("Queue cleared");
   }
 

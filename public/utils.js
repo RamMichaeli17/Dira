@@ -26,9 +26,16 @@ export const uiUtils = {
    * @param {number} queueLength - Current queue length
    * @param {boolean} isQueueEmpty - Whether queue was initially empty
    */
-  updateQueueDisplay: (queueLength, isQueueEmpty) => {
+  updateQueueDisplay: (queueLength, isFirstInQueue) => {
     const queueStatusDiv = document.getElementById("queueStatus");
 
+    // If no queue or request is being processed (first in queue)
+    if (queueLength === 0 || isFirstInQueue) {
+      queueStatusDiv.style.display = "none";
+      return;
+    }
+
+    // Show queue for waiting users
     if (queueLength > 0) {
       const steps = queueStatusDiv.querySelectorAll(".step");
       const connectors = queueStatusDiv.querySelectorAll(".step-connector");
@@ -43,33 +50,35 @@ export const uiUtils = {
         connector.className = "step-connector";
       });
 
-      // Calculate current position and update UI accordingly
+      // Calculate user's position in queue (subtract 1 because first position is being processed)
       const position = Math.min(queueLength, 3);
-      const waitTimeMinutes = Math.ceil(position * 0.5); // Rough estimate: 30 seconds per request
+      const userPosition = position - 1;
+      const waitTimeMinutes = Math.ceil(userPosition * 0.5); // Rough estimate: 30 seconds per request
 
       // Update steps based on position
-      for (let i = 0; i < position; i++) {
-        if (i === position - 1) {
-          steps[i].classList.add("active");
-        } else {
-          steps[i].classList.add("completed");
+      for (let i = 0; i < userPosition; i++) {
+        steps[i].classList.add("completed");
+        if (i < 2) {
+          // Only update connectors if not last step
           connectors[i].classList.add("active");
         }
       }
+      // Highlight current position
+      if (userPosition < 3) {
+        steps[userPosition].classList.add("active");
+      }
 
-      // Update message and wait time
+      // Update message and wait time based on position
       queueMessage.textContent =
-        position === 1
-          ? "Processing your request..."
-          : `Your request is ${position}${getNumberSuffix(position)} in queue`;
+        userPosition === 0
+          ? "You're next in line!"
+          : `Your position in queue: ${getOrdinalNumber(userPosition + 1)}`;
 
       queueTime.textContent = `Estimated wait time: ${waitTimeMinutes} minute${
         waitTimeMinutes > 1 ? "s" : ""
       }`;
 
       queueStatusDiv.style.display = "block";
-    } else if (isQueueEmpty) {
-      queueStatusDiv.style.display = "none";
     }
   },
 
@@ -104,14 +113,14 @@ export const uiUtils = {
 };
 
 /**
- * Get ordinal suffix for a number (1st, 2nd, 3rd, etc.)
- * @param {number} n - Number to get suffix for
- * @returns {string} Ordinal suffix
+ * Get ordinal number (1st, 2nd, 3rd, etc.)
+ * @param {number} n - Number to convert
+ * @returns {string} Number with ordinal suffix
  */
-function getNumberSuffix(n) {
-  const s = ["th", "st", "nd", "rd"];
+function getOrdinalNumber(n) {
+  const suffixes = ["th", "st", "nd", "rd"];
   const v = n % 100;
-  return s[(v - 20) % 10] || s[v] || s[0];
+  return n + (suffixes[(v - 20) % 10] || suffixes[v] || suffixes[0]);
 }
 
 /**

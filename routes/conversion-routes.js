@@ -24,7 +24,10 @@ async function processQueue() {
 
       // Check if request was canceled before sending response
       if (!abortController.signal.aborted) {
-        res.json(result);
+        res.json({
+          ...result,
+          requestId: currentRequest.id,
+        });
       } else {
         console.log("Request was canceled, response not sent");
       }
@@ -35,6 +38,7 @@ async function processQueue() {
         res.status(500).json({
           error:
             error.message || "An unexpected error occurred during processing",
+          requestId: currentRequest.id,
         });
       } else {
         console.log("Request was canceled, error response not sent");
@@ -64,6 +68,7 @@ router.post("/convert", async (req, res) => {
     console.error("Missing project input");
     return res.status(400).json({
       error: "Invalid input. Project input is required.",
+      requestId: req.headers["x-request-id"],
     });
   }
 
@@ -91,8 +96,13 @@ router.post("/convert", async (req, res) => {
 router.post("/cancel", (req, res) => {
   const currentRequest = queueService.peek();
   if (currentRequest?.abortController) {
-    currentRequest.abortController.abort();
-    res.json({ message: "Request canceled successfully" });
+    // Only cancel if the request ID matches
+    if (currentRequest.id === req.headers["x-request-id"]) {
+      currentRequest.abortController.abort();
+      res.json({ message: "Request canceled successfully" });
+    } else {
+      res.status(403).json({ error: "Not authorized to cancel this request" });
+    }
   } else {
     res.status(404).json({ error: "No active request to cancel" });
   }
@@ -103,9 +113,12 @@ router.post("/cancel", (req, res) => {
  * GET /queue-status
  */
 router.get("/queue-status", (req, res) => {
+  const requestId = req.headers["x-request-id"];
   res.json({
     queueLength: queueService.getLength(),
     isProcessing: queueService.isCurrentlyProcessing(),
+    currentRequestId: queueService.getCurrentRequestId(),
+    requestId: requestId,
   });
 });
 
