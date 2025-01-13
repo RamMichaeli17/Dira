@@ -111,76 +111,72 @@ button:disabled {
 /* Queue Status */
 .queue-status {
   margin: 20px 0;
-  padding: 15px;
+  padding: 20px;
   background-color: #f8f9fa;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
 }
 
-.queue-progress {
+.queue-info {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-top: 10px;
+  align-items: center;
+  margin-bottom: 15px;
 }
 
-.queue-steps {
+.queue-position {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  margin: 0 10px;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
-.step {
-  position: relative;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background-color: #e9ecef;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
+.position-number {
+  font-size: 24px;
   font-weight: bold;
-  color: #6c757d;
-  transition: all 0.3s ease;
+  color: #2d89ef;
 }
 
-.step.active {
-  background-color: #2d89ef;
-  color: white;
-}
-
-.step.completed {
-  background-color: #28a745;
-  color: white;
-}
-
-.step-connector {
-  flex-grow: 1;
-  height: 2px;
-  background-color: #e9ecef;
-  margin: 0 5px;
-}
-
-.step-connector.active {
-  background-color: #2d89ef;
-}
-
-.queue-message {
-  margin-top: 15px;
-  text-align: center;
-  color: #495057;
-  font-size: 14px;
+.position-text {
+  font-size: 12px;
+  color: #666;
 }
 
 .queue-time {
-  color: #6c757d;
+  font-size: 14px;
+  color: #666;
+}
+
+.queue-progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 15px 0;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #2d89ef;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.queue-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.total-requests {
   font-size: 12px;
-  margin-top: 5px;
-  text-align: center;
+  color: #666;
+}
+
+.requests-number {
+  font-weight: bold;
+  color: #2d89ef;
 }
 
 /* Output */
@@ -230,4 +226,18 @@ footer {
   padding: 10px 0;
   border-top: 1px solid #ddd;
   font-weight: bold;
+}
+
+/* Animation for Progress Bar */
+@keyframes progress {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.progress-fill.animate {
+  animation: progress 30s linear infinite;
 }

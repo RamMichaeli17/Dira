@@ -24,19 +24,23 @@
 
     <!-- Queue Status -->
     <div id="queueStatus" class="queue-status" style="display: none;">
-      <div class="queue-progress">
-        <div class="queue-steps">
-          <div class="step completed">1</div>
-          <div class="step-connector"></div>
-          <div class="step">2</div>
-          <div class="step-connector"></div>
-          <div class="step">3</div>
+      <div class="queue-info">
+        <div class="queue-position">
+          <span class="position-number">1</span>
+          <span class="position-text">Your position in queue</span>
         </div>
-      </div>
-      <div class="queue-message">Your request is in queue</div>
-      <div class="queue-time">Estimated wait time:
+        <div class="queue-time">Estimated wait time:
 
-        < 1 minute</div>
+          < 1 minute</div>
+        </div>
+        <div class="queue-progress-bar">
+          <div class="progress-fill"></div>
+        </div>
+        <div class="queue-details">
+          <div class="total-requests">
+            Total requests in queue: <span class="requests-number">1</span>
+          </div>
+        </div>
       </div>
 
       <div class="output" id="output"></div>
