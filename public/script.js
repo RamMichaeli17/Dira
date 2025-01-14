@@ -2,37 +2,29 @@
 
 import { uiUtils, buttonUtils } from "./utils.js";
 
-// Global AbortController for managing request cancellation
 let abortController = null;
 let currentRequestId = null;
 
 /**
- * Start the conversion process
+ * Start conversion process
  */
 const startConversion = async () => {
   const projectInput = document.getElementById("projectInput").value.trim();
-
   if (!projectInput) {
-    alert("Please enter a valid URL or project number.");
+    alert("Please enter a project URL or number");
     return;
   }
 
-  // Update UI states
   buttonUtils.updateButtonStates(true);
   uiUtils.showLoading();
 
-  // Setup abort controller
   if (abortController) {
     abortController.abort();
   }
   abortController = new AbortController();
-  const signal = abortController.signal;
-
-  // Generate unique request ID
   currentRequestId = Date.now().toString();
 
   try {
-    // Send conversion request
     const response = await fetch("/convert", {
       method: "POST",
       headers: {
@@ -40,20 +32,17 @@ const startConversion = async () => {
         "X-Request-ID": currentRequestId,
       },
       body: JSON.stringify({ projectInput }),
-      signal,
+      signal: abortController.signal,
     });
 
     const data = await response.json();
-
     if (data.requestId === currentRequestId) {
       uiUtils.displayResults(data);
     }
   } catch (error) {
-    const outputDiv = document.getElementById("output");
-    outputDiv.innerHTML = signal.aborted
-      ? "<p>Request canceled.</p>"
-      : "<p>An error occurred.</p>";
-    console.error("Error:", error);
+    document.getElementById("output").innerHTML = abortController.signal.aborted
+      ? "<p>Request canceled</p>"
+      : "<p>Error occurred</p>";
   } finally {
     uiUtils.hideLoading();
     buttonUtils.updateButtonStates(false);
@@ -75,47 +64,37 @@ const cancelConversion = async () => {
           "X-Request-ID": currentRequestId,
         },
       });
-      console.log("Request canceled successfully");
     } catch (error) {
-      console.error("Error canceling request:", error);
+      console.error("Cancel error:", error);
     }
   }
 };
 
 /**
- * Update queue status periodically
+ * Update queue status
  */
 const updateQueueStatus = async () => {
   try {
     const response = await fetch("/queue-status", {
-      headers: {
-        "X-Request-ID": currentRequestId,
-      },
+      headers: { "X-Request-ID": currentRequestId },
     });
     const data = await response.json();
 
-    // Check if this request is currently being processed
     const isFirstInQueue = data.currentRequestId === currentRequestId;
-
     uiUtils.updateQueueDisplay(data.queueLength, isFirstInQueue);
 
     if (!isFirstInQueue) {
       setTimeout(updateQueueStatus, 1000);
     }
   } catch (error) {
-    console.error("Error fetching queue status:", error);
+    console.error("Queue status error:", error);
   }
 };
 
-// Start queue status updates when conversion begins
-const startQueueUpdates = () => {
-  updateQueueStatus();
-};
-
-// Event Listeners
+// Event listeners
 document.getElementById("convertButton").addEventListener("click", () => {
   startConversion();
-  startQueueUpdates();
+  updateQueueStatus();
 });
 
 document
@@ -125,6 +104,6 @@ document
 document.getElementById("projectInput").addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     startConversion();
-    startQueueUpdates();
+    updateQueueStatus();
   }
 });

@@ -1,11 +1,11 @@
 // public/utils.js
 
 /**
- * UI utility functions for handling views and displays
+ * UI utility functions
  */
 export const uiUtils = {
   /**
-   * Show loading state and hide other elements
+   * Show loading state
    */
   showLoading: () => {
     document.getElementById("loading").style.display = "block";
@@ -22,50 +22,40 @@ export const uiUtils = {
   },
 
   /**
-   * Update queue status display with visual progress indicator
-   * @param {number} queueLength - Current queue length
-   * @param {boolean} isFirstInQueue - Whether request is first in queue
+   * Update queue display
    */
   updateQueueDisplay: (queueLength, isFirstInQueue) => {
     const queueStatusDiv = document.getElementById("queueStatus");
-    const positionNumber = document.querySelector(".position-number");
-    const queueTime = document.querySelector(".queue-time");
-    const requestsNumber = document.querySelector(".requests-number");
-    const progressFill = document.querySelector(".progress-fill");
 
-    // If no queue or request is being processed (first in queue)
     if (queueLength === 0 || isFirstInQueue) {
       queueStatusDiv.style.display = "none";
       return;
     }
 
-    // Show queue status for waiting users
-    if (queueLength > 0) {
-      const position = queueLength;
-      const waitTimeMinutes = Math.ceil((position - 1) * 0.5); // Rough estimate: 30 seconds per request
+    const position = queueLength;
+    const waitTimeMinutes = Math.ceil((position - 1) * 0.5);
 
-      // Update position and queue information
-      positionNumber.textContent = position;
-      requestsNumber.textContent = queueLength;
-      queueTime.textContent = `Estimated wait time: ${waitTimeMinutes} minute${
-        waitTimeMinutes > 1 ? "s" : ""
-      }`;
+    document.querySelector(".position-number").textContent = position;
+    document.querySelector(".requests-number").textContent = queueLength;
+    document.querySelector(
+      ".queue-time"
+    ).textContent = `Estimated wait time: ${waitTimeMinutes} minute${
+      waitTimeMinutes > 1 ? "s" : ""
+    }`;
 
-      // Update progress bar
-      const progress = Math.max(5, Math.min(100, (1 / position) * 100));
-      progressFill.style.width = `${progress}%`;
+    const progress = Math.max(5, Math.min(100, (1 / position) * 100));
+    const progressFill = document.querySelector(".progress-fill");
+    progressFill.style.width = `${progress}%`;
 
-      if (!progressFill.classList.contains("animate")) {
-        progressFill.classList.add("animate");
-      }
-
-      queueStatusDiv.style.display = "block";
+    if (!progressFill.classList.contains("animate")) {
+      progressFill.classList.add("animate");
     }
+
+    queueStatusDiv.style.display = "block";
   },
 
   /**
-   * Display map previews and URLs
-   * @param {Object} data - Response data containing URLs
+   * Display results
    */
   displayResults: (data) => {
     const outputDiv = document.getElementById("output");
@@ -94,12 +84,11 @@ export const uiUtils = {
 };
 
 /**
- * Button state management functions
+ * Button utility functions
  */
 export const buttonUtils = {
   /**
    * Update button states
-   * @param {boolean} isConverting - Whether conversion is in progress
    */
   updateButtonStates: (isConverting) => {
     const convertButton = document.getElementById("convertButton");

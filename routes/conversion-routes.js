@@ -5,49 +5,47 @@ const queueService = require("../services/queue-service");
 const conversionService = require("../services/conversion-service");
 
 /**
- * Process queued requests sequentially
+ * Process queue items sequentially
  */
 async function processQueue() {
-  // Only process if there are items in queue and not already processing
   if (queueService.getLength() > 0 && !queueService.isCurrentlyProcessing()) {
     queueService.setProcessingStatus(true);
     const currentRequest = queueService.peek();
 
     try {
       const { req, res, abortController } = currentRequest;
-      const { projectInput } = req.body;
+
+      if (!req.body.projectInput) {
+        throw new Error("Project input is required");
+      }
 
       const result = await conversionService.processProjectInput(
-        projectInput,
+        req.body.projectInput,
         abortController.signal
       );
 
-      // Check if request was canceled before sending response
       if (!abortController.signal.aborted) {
         res.json({
           ...result,
           requestId: currentRequest.id,
+          success: true,
         });
-      } else {
-        console.log("Request was canceled, response not sent");
       }
     } catch (error) {
+      console.error("Error processing request:", error);
       const { res, abortController } = currentRequest;
+
       if (!abortController.signal.aborted) {
-        console.error("Error processing request:", error);
         res.status(500).json({
-          error:
-            error.message || "An unexpected error occurred during processing",
+          error: error.message || "An error occurred during processing",
           requestId: currentRequest.id,
+          success: false,
         });
-      } else {
-        console.log("Request was canceled, error response not sent");
       }
     } finally {
       queueService.remove();
       queueService.setProcessingStatus(false);
 
-      // Process next request if available
       if (queueService.getLength() > 0) {
         processQueue();
       }
@@ -56,69 +54,64 @@ async function processQueue() {
 }
 
 /**
- * Route to convert project input to coordinates
+ * Convert project input route
  * POST /convert
  */
-router.post("/convert", async (req, res) => {
-  const startTime = Date.now();
-  const { projectInput } = req.body;
+router.post("/convert", (req, res) => {
+  console.log("Received project input:", req.body.projectInput);
 
-  // Validate input
-  if (!projectInput) {
-    console.error("Missing project input");
+  if (!req.body.projectInput) {
     return res.status(400).json({
-      error: "Invalid input. Project input is required.",
+      error: "Project input is required",
       requestId: req.headers["x-request-id"],
+      success: false,
     });
   }
 
-  console.log("Received project input:", projectInput);
-
-  // Create abort controller for this request
   const abortController = new AbortController();
-
-  // Add request to queue with abort controller
   queueService.add({ req, res, abortController });
+
   console.log(
-    `Request added to queue. Processing time: ${Date.now() - startTime}ms`
+    "Request added to queue. Queue length:",
+    queueService.getLength()
   );
 
-  // Start processing if this is the only request
   if (queueService.getLength() === 1) {
     processQueue();
   }
 });
 
 /**
- * Route to cancel current request
+ * Cancel request route
  * POST /cancel
  */
 router.post("/cancel", (req, res) => {
   const currentRequest = queueService.peek();
-  if (currentRequest?.abortController) {
-    // Only cancel if the request ID matches
-    if (currentRequest.id === req.headers["x-request-id"]) {
-      currentRequest.abortController.abort();
-      res.json({ message: "Request canceled successfully" });
-    } else {
-      res.status(403).json({ error: "Not authorized to cancel this request" });
-    }
+  if (currentRequest?.id === req.headers["x-request-id"]) {
+    currentRequest.abortController.abort();
+    res.json({
+      message: "Request canceled",
+      success: true,
+    });
   } else {
-    res.status(404).json({ error: "No active request to cancel" });
+    res.status(404).json({
+      error: "No matching request found",
+      success: false,
+    });
   }
 });
 
 /**
- * Route to get current queue status
+ * Get queue status route
  * GET /queue-status
  */
 router.get("/queue-status", (req, res) => {
-  const requestId = req.headers["x-request-id"];
   res.json({
     queueLength: queueService.getLength(),
     isProcessing: queueService.isCurrentlyProcessing(),
     currentRequestId: queueService.getCurrentRequestId(),
-    requestId: requestId,
+    requestId: req.headers["x-request-id"],
+    success: true,
   });
 });
 

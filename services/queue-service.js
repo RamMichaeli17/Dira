@@ -1,67 +1,56 @@
 // services/queue-service.js
 
 /**
- * Service for managing request queue
- * Handles request queuing and processing to prevent concurrent access to browser
+ * Simple queue service for managing request processing
  */
 class QueueService {
   constructor() {
     this.queue = [];
     this.isProcessing = false;
-    this.canceledRequests = new Set();
     this.currentRequestId = null;
   }
 
   /**
-   * Add new request to queue
-   * @param {Object} request Request object containing req and res
-   * @returns {number} Current queue length
+   * Add request to queue
+   * @param {Object} request Request object with req, res and abortController
+   * @returns {number} Queue length
    */
   add(request) {
-    // Extract request ID from headers
-    const requestId = request.req.headers["x-request-id"];
-    request.id = requestId;
-
+    request.id = request.req.headers["x-request-id"];
     this.queue.push(request);
-    console.log(
-      `Request ${requestId} added to queue. Queue length: ${this.queue.length}`
-    );
     return this.queue.length;
   }
 
   /**
-   * Remove first request from queue
-   * @returns {Object|null} First request in queue or null if empty
+   * Remove and return first request
+   * @returns {Object|null} First request or null if queue empty
    */
   remove() {
     const request = this.queue.shift();
     if (request) {
       this.currentRequestId = null;
-      console.log(
-        `Request ${request.id} removed from queue. Queue length: ${this.queue.length}`
-      );
     }
     return request;
   }
 
   /**
-   * Get current queue length
-   * @returns {number} Current queue length
-   */
-  getLength() {
-    return this.queue.length;
-  }
-
-  /**
-   * Get first request in queue without removing it
-   * @returns {Object|null} First request in queue or null if empty
+   * Get first request without removing
+   * @returns {Object|null} First request or null if queue empty
    */
   peek() {
     return this.queue[0] || null;
   }
 
   /**
-   * Check if queue is currently processing requests
+   * Get queue length
+   * @returns {number} Queue length
+   */
+  getLength() {
+    return this.queue.length;
+  }
+
+  /**
+   * Check if request is being processed
    * @returns {boolean} Processing status
    */
   isCurrentlyProcessing() {
@@ -69,63 +58,21 @@ class QueueService {
   }
 
   /**
-   * Set processing status and current request ID
-   * @param {boolean} status New processing status
+   * Update processing status
+   * @param {boolean} status New status
    */
   setProcessingStatus(status) {
     this.isProcessing = status;
-    if (status && this.queue[0]) {
-      this.currentRequestId = this.queue[0].id;
-    } else {
-      this.currentRequestId = null;
-    }
+    this.currentRequestId = status && this.queue[0] ? this.queue[0].id : null;
   }
 
   /**
-   * Get current processing request ID
-   * @returns {string|null} Current request ID or null
+   * Get ID of request being processed
+   * @returns {string|null} Current request ID
    */
   getCurrentRequestId() {
     return this.currentRequestId;
   }
-
-  /**
-   * Clear all requests from queue
-   */
-  clear() {
-    this.queue = [];
-    this.isProcessing = false;
-    this.canceledRequests.clear();
-    this.currentRequestId = null;
-    console.log("Queue cleared");
-  }
-
-  /**
-   * Mark request as canceled
-   * @param {Object} request Request to mark as canceled
-   */
-  markAsCanceled(request) {
-    this.canceledRequests.add(request);
-    console.log("Request marked as canceled");
-  }
-
-  /**
-   * Check if request is canceled
-   * @param {Object} request Request to check
-   * @returns {boolean} Whether request is canceled
-   */
-  isCanceled(request) {
-    return this.canceledRequests.has(request);
-  }
-
-  /**
-   * Clear canceled status for request
-   * @param {Object} request Request to clear status for
-   */
-  clearCancelStatus(request) {
-    this.canceledRequests.delete(request);
-  }
 }
 
-// Export single instance
 module.exports = new QueueService();

@@ -1,4 +1,5 @@
 // services/conversion-service.js
+
 const browserService = require("./browser-service");
 const coordinatesService = require("./coordinates-service");
 const govmapService = require("./govmap-service");
@@ -8,87 +9,72 @@ const urlService = require("./url-service");
 class ConversionService {
   /**
    * Process project input and return all necessary data
-   * @param {string} projectInput
-   * @param {AbortSignal} signal - AbortController signal for cancellation
+   * @param {string} projectInput - Project input to process
+   * @param {AbortSignal} signal - Signal for request cancellation
    * @returns {Promise<Object>} Processing result
    */
   async processProjectInput(projectInput, signal) {
     let newPage = null;
-    const startTime = Date.now();
 
     try {
-      // Check if already cancelled
       if (signal?.aborted) {
-        throw new Error("Request was canceled");
+        throw new Error("Request canceled");
       }
 
-      console.log("Processing input:", projectInput);
+      // Get project number
+      let projectNumber = null;
 
-      // First try to get project details
-      const { projectNumber, lotteryNumber } =
-        await projectDetailsService.extractProjectDetails(projectInput);
-
-      // Check if cancelled after project details
-      if (signal?.aborted) {
-        throw new Error("Request was canceled");
+      try {
+        // First try to get via project details
+        const details = await projectDetailsService.extractProjectDetails(
+          projectInput
+        );
+        projectNumber = details.projectNumber;
+      } catch (error) {
+        // If that fails, try direct extraction
+        projectNumber = urlService.extractProjectNumber(projectInput);
       }
 
-      // Only if that fails, try to extract project number directly
-      const finalProjectNumber =
-        projectNumber || urlService.extractProjectNumber(projectInput);
-
-      if (!finalProjectNumber) {
+      if (!projectNumber) {
         throw new Error("Could not determine project number");
       }
 
-      // Get coordinates and generate URLs
+      // Create new page and get coordinates
       newPage = await browserService.createNewPage();
 
-      // Check if cancelled after page creation
       if (signal?.aborted) {
-        if (newPage && !newPage.isClosed()) {
-          await newPage.close();
-        }
-        throw new Error("Request was canceled");
+        await newPage?.close();
+        throw new Error("Request canceled");
       }
 
       const coordinates = await govmapService.getCoordinates(
-        finalProjectNumber,
+        projectNumber,
         newPage,
         signal
       );
 
-      // Final cancellation check
       if (signal?.aborted) {
-        throw new Error("Request was canceled");
+        throw new Error("Request canceled");
       }
 
-      const urls = coordinatesService.generateUrls(
-        finalProjectNumber,
-        coordinates
-      );
+      // Generate URLs from coordinates
+      const urls = coordinatesService.generateUrls(projectNumber, coordinates);
 
-      // Cleanup
-      if (newPage && !newPage.isClosed()) {
-        await newPage.close();
-      }
+      await newPage?.close();
       await browserService.resetMainPage();
 
-      console.log(`Conversion completed in ${Date.now() - startTime} ms.`);
       return urls;
     } catch (error) {
-      if (newPage && !newPage.isClosed()) {
-        await newPage.close();
-      }
+      await newPage?.close();
       await browserService.resetMainPage();
 
-      if (error.message === "Request was canceled" || signal?.aborted) {
-        console.log("Conversion canceled");
-        throw new Error("Request was canceled");
+      if (signal?.aborted) {
+        throw new Error("Request canceled");
       }
-      throw new Error(`Conversion failed: ${error.message}`);
+      throw error;
     }
   }
 }
 
+// Export a new instance of the service
 module.exports = new ConversionService();
