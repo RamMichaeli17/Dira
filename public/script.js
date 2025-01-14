@@ -99,8 +99,8 @@ const updateQueueStatus = async () => {
 
     uiUtils.updateQueueDisplay(data.queueLength, isFirstInQueue);
 
-    if (data.queueLength > 0) {
-      setTimeout(updateQueueStatus, 2000);
+    if (!isFirstInQueue) {
+      setTimeout(updateQueueStatus, 1000);
     }
   } catch (error) {
     console.error("Error fetching queue status:", error);
