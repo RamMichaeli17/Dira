@@ -15,7 +15,7 @@ class UrlService {
 
     return {
       govMapIframeUrl: `https://www.govmap.gov.il/map.html?lay=Matara_MItham,Matara_Mig&bs=Matara_MItham|ACTIVEPROJECTID~${projectNumber}`,
-      googleMapsIframeUrl: `https://www.google.com/maps?q=${latitude},${longitude}&hl=en&output=embed`,
+      googleMapsIframeUrl: `https://www.google.com/maps?q=${latitude},${longitude}&hl=iw&output=embed`,
     };
   }
 

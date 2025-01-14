@@ -32,7 +32,7 @@ class CoordinatesService {
     });
 
     return {
-      googleMapsUrl: `https://www.google.com/maps/place/${latitude},${longitude}`,
+      googleMapsUrl: `https://www.google.com/maps/place/${latitude},${longitude}?hl=iw`,
       updatedUrl: `https://www.govmap.gov.il/?lay=Matara_MItham,Matara_Mig&bs=Matara_MItham%7CACTIVEPROJECTID~${projectNumber}`,
       ...iframeUrls,
     };
