@@ -32,21 +32,15 @@ export const uiUtils = {
       return;
     }
 
-    const position = queueLength;
-    const waitTimeMinutes = Math.ceil((position - 1) * 0.5);
+    // Update queue status HTML structure
+    queueStatusDiv.innerHTML = `
+      <div class="queue-message">Your request is in queue</div>
+      <div class="queue-progress-bar">
+        <div class="progress-fill"></div>
+      </div>
+    `;
 
-    document.querySelector(".position-number").textContent = position;
-    document.querySelector(".requests-number").textContent = queueLength;
-    document.querySelector(
-      ".queue-time"
-    ).textContent = `Estimated wait time: ${waitTimeMinutes} minute${
-      waitTimeMinutes > 1 ? "s" : ""
-    }`;
-
-    const progress = Math.max(5, Math.min(100, (1 / position) * 100));
-    const progressFill = document.querySelector(".progress-fill");
-    progressFill.style.width = `${progress}%`;
-
+    const progressFill = queueStatusDiv.querySelector(".progress-fill");
     if (!progressFill.classList.contains("animate")) {
       progressFill.classList.add("animate");
     }
