@@ -63,23 +63,19 @@ async function processQueue() {
  * POST /convert
  */
 router.post("/convert", (req, res) => {
+  const requestId = req.headers["x-request-id"];
   console.log("Received project input:", req.body.projectInput);
 
   if (!req.body.projectInput) {
     return res.status(400).json({
       error: "Project input is required",
-      requestId: req.headers["x-request-id"],
+      requestId: requestId,
       success: false,
     });
   }
 
   const abortController = new AbortController();
   queueService.add({ req, res, abortController });
-
-  console.log(
-    "Request added to queue. Queue length:",
-    queueService.getLength()
-  );
 
   if (queueService.getLength() === 1) {
     processQueue();

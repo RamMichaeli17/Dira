@@ -14,6 +14,7 @@ class ConversionService {
    * @returns {Promise<Object>} Processing result
    */
   async processProjectInput(projectInput, signal) {
+    const startTime = Date.now();
     let newPage = null;
 
     try {
@@ -62,6 +63,10 @@ class ConversionService {
 
       await newPage?.close();
       await browserService.resetMainPage();
+
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+      console.log(`Conversion completed in ${duration} ms.`);
 
       return urls;
     } catch (error) {

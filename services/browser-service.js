@@ -57,7 +57,7 @@ class BrowserService {
     try {
       await this.mainPage.goto("https://better-dira.netlify.app/", {
         waitUntil: "networkidle2",
-        timeout: 60000,
+        timeout: 90000,
       });
     } catch (error) {
       console.error("Failed to reset main page:", error);

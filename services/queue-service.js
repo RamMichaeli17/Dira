@@ -18,6 +18,9 @@ class QueueService {
   add(request) {
     request.id = request.req.headers["x-request-id"];
     this.queue.push(request);
+    console.log(
+      `Request ${request.id} added to queue. Queue length: ${this.queue.length}`
+    );
     return this.queue.length;
   }
 
@@ -52,6 +55,9 @@ class QueueService {
   remove() {
     const request = this.queue.shift();
     if (request) {
+      console.log(
+        `Request ${request.id} removed from queue. Queue length: ${this.queue.length}`
+      );
       this.currentRequestId = null;
       this.isProcessing = false;
     }
