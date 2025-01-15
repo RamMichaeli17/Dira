@@ -1,9 +1,9 @@
 // public/script.js
 
 import { uiUtils, buttonUtils } from "./utils.js";
+import { requestState } from "./stateUtils.js";
 
 let abortController = null;
-let currentRequestId = null;
 
 /**
  * Start conversion process
@@ -12,6 +12,8 @@ const startConversion = async () => {
   const projectInput = document.getElementById("projectInput").value.trim();
   if (!projectInput) {
     alert("Please enter a project URL or number");
+    uiUtils.hideLoading();
+    document.getElementById("queueStatus").style.display = "none";
     return;
   }
 
@@ -22,75 +24,84 @@ const startConversion = async () => {
     abortController.abort();
   }
   abortController = new AbortController();
-  currentRequestId = Date.now().toString();
+  requestState.setCurrentRequestId(Date.now().toString());
 
   try {
     const response = await fetch("/convert", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Request-ID": currentRequestId,
+        "X-Request-ID": requestState.getCurrentRequestId(),
       },
       body: JSON.stringify({ projectInput }),
       signal: abortController.signal,
     });
 
     const data = await response.json();
-    if (data.requestId === currentRequestId) {
+    if (data.requestId === requestState.getCurrentRequestId()) {
       uiUtils.displayResults(data);
     }
   } catch (error) {
-    document.getElementById("output").innerHTML = abortController.signal.aborted
-      ? "<p>Request canceled</p>"
-      : "<p>Error occurred</p>";
+    if (!abortController.signal.aborted) {
+      document.getElementById("output").innerHTML = "<p>Error occurred</p>";
+    }
   } finally {
+    if (abortController.signal.aborted) {
+      document.getElementById("output").innerHTML = "<p>Request canceled</p>";
+    }
     uiUtils.hideLoading();
     buttonUtils.updateButtonStates(false);
     abortController = null;
   }
 };
 
-/**
- * Cancel ongoing conversion
- */
+// Enhance the updateQueueStatus function
+const updateQueueStatus = async () => {
+  // Only proceed if we have a valid currentRequestId
+  if (!requestState.getCurrentRequestId()) {
+    return;
+  }
+
+  try {
+    const response = await fetch("/queue-status", {
+      headers: { "X-Request-ID": requestState.getCurrentRequestId() },
+    });
+    const data = await response.json();
+
+    // Only update UI if this request is still valid (not canceled)
+    if (requestState.getCurrentRequestId()) {
+      const isFirstInQueue =
+        data.currentRequestId === requestState.getCurrentRequestId();
+      uiUtils.updateQueueDisplay(data.queueLength, isFirstInQueue);
+
+      // Continue polling only if we're still in queue and request wasn't canceled
+      if (!isFirstInQueue && data.queueLength > 0) {
+        setTimeout(updateQueueStatus, 1000);
+      }
+    }
+  } catch (error) {
+    console.error("Queue status error:", error);
+  }
+};
+
 const cancelConversion = async () => {
   if (abortController) {
     abortController.abort();
     document.getElementById("loading").style.display = "none";
     document.getElementById("queueStatus").style.display = "none";
+    requestState.clearCurrentRequestId();
 
     try {
       await fetch("/cancel", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Request-ID": currentRequestId,
+          "X-Request-ID": requestState.getCurrentRequestId(),
         },
       });
     } catch (error) {
       console.error("Cancel error:", error);
     }
-  }
-};
-
-/**
- * Update queue status
- */
-const updateQueueStatus = async () => {
-  try {
-    const response = await fetch("/queue-status", {
-      headers: { "X-Request-ID": currentRequestId },
-    });
-    const data = await response.json();
-
-    const isFirstInQueue = data.currentRequestId === currentRequestId;
-    uiUtils.updateQueueDisplay(data.queueLength, isFirstInQueue);
-
-    if (!isFirstInQueue) {
-      setTimeout(updateQueueStatus, 1000);
-    }
-  } catch (error) {
-    console.error("Queue status error:", error);
   }
 };
 

@@ -1,5 +1,7 @@
 // public/utils.js
 
+import { requestState } from "./stateUtils.js";
+
 /**
  * UI utility functions
  */
@@ -33,24 +35,23 @@ export const uiUtils = {
     queueStatusDiv.style.display = "none";
     loadingDiv.style.display = "none";
 
-    if (queueLength === 0) {
-      return;
-    }
-
-    if (isFirstInQueue) {
-      // Show processing for first in queue
-      loadingDiv.style.display = "block";
-    } else {
-      // Show queue status for others
-      queueStatusDiv.innerHTML = `
-        <div class="queue-message">Your request is in queue</div>
-        <div class="queue-dots">
-          <div class="dot"></div>
-          <div class="dot"></div>
-          <div class="dot"></div>
-        </div>
-      `;
-      queueStatusDiv.style.display = "block";
+    // Only show status if we have a valid queue length and the request wasn't canceled
+    if (queueLength > 0 && requestState.getCurrentRequestId()) {
+      if (isFirstInQueue) {
+        // Show processing for first in queue
+        loadingDiv.style.display = "block";
+      } else {
+        // Show queue status for others
+        queueStatusDiv.innerHTML = `
+          <div class="queue-message">Your request is in queue</div>
+          <div class="queue-dots">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+          </div>
+        `;
+        queueStatusDiv.style.display = "block";
+      }
     }
   },
 
