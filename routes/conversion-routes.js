@@ -19,6 +19,10 @@ async function processQueue() {
         throw new Error("Project input is required");
       }
 
+      if (abortController.signal.aborted) {
+        throw new Error("Request was canceled");
+      }
+
       const result = await conversionService.processProjectInput(
         req.body.projectInput,
         abortController.signal
@@ -46,6 +50,7 @@ async function processQueue() {
       queueService.remove();
       queueService.setProcessingStatus(false);
 
+      // Process next request if available
       if (queueService.getLength() > 0) {
         processQueue();
       }
@@ -86,13 +91,25 @@ router.post("/convert", (req, res) => {
  * POST /cancel
  */
 router.post("/cancel", (req, res) => {
-  const currentRequest = queueService.peek();
-  if (currentRequest?.id === req.headers["x-request-id"]) {
-    currentRequest.abortController.abort();
+  const requestId = req.headers["x-request-id"];
+
+  // Try to remove the request from queue
+  const request = queueService.removeById(requestId);
+
+  if (request) {
+    // Abort the request if it exists
+    request.abortController.abort();
+
     res.json({
-      message: "Request canceled",
+      message: "Request canceled successfully",
       success: true,
     });
+
+    // If there are remaining requests and nothing is processing,
+    // start processing the next request
+    if (queueService.getLength() > 0 && !queueService.isCurrentlyProcessing()) {
+      processQueue();
+    }
   } else {
     res.status(404).json({
       error: "No matching request found",
@@ -106,11 +123,26 @@ router.post("/cancel", (req, res) => {
  * GET /queue-status
  */
 router.get("/queue-status", (req, res) => {
+  const requestId = req.headers["x-request-id"];
+
+  // Check if request still exists in queue
+  const isInQueue = queueService.hasRequest(requestId);
+
+  if (!isInQueue) {
+    return res.json({
+      queueLength: 0,
+      isProcessing: false,
+      currentRequestId: null,
+      requestId: requestId,
+      success: true,
+    });
+  }
+
   res.json({
     queueLength: queueService.getLength(),
     isProcessing: queueService.isCurrentlyProcessing(),
     currentRequestId: queueService.getCurrentRequestId(),
-    requestId: req.headers["x-request-id"],
+    requestId: requestId,
     success: true,
   });
 });

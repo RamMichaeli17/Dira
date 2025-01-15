@@ -10,32 +10,51 @@ class GovMapService {
     let attempts = 0;
     const maxAttempts = 3;
 
-    // Set up abort handler
-    signal?.addEventListener("abort", async () => {
+    // Enhanced abort handler
+    const abortHandler = async () => {
       console.log("Navigation aborted");
       try {
+        // Force stop the page loading
+        await page.evaluate(() => window.stop());
         if (!page.isClosed()) {
           await page.close();
         }
+        console.log("Conversion canceled");
       } catch (error) {
-        console.error("Error closing page:", error);
+        console.error("Error during abort cleanup:", error);
       }
-    });
+    };
+
+    // Set up abort handler
+    signal?.addEventListener("abort", abortHandler);
 
     while (attempts < maxAttempts) {
       try {
         // Check if cancelled before navigation
         if (signal?.aborted) {
+          console.log("Request was canceled before navigation");
           throw new Error("Request was canceled");
         }
 
-        await page.goto(baseUrl, {
+        // Set a shorter timeout for navigation
+        const navigationPromise = page.goto(baseUrl, {
           waitUntil: "networkidle2",
-          timeout: 60000,
+          timeout: 30000, // Reduced timeout
         });
+
+        // Race between navigation and abort signal
+        await Promise.race([
+          navigationPromise,
+          new Promise((_, reject) => {
+            signal?.addEventListener("abort", () => {
+              reject(new Error("Request was canceled during navigation"));
+            });
+          }),
+        ]);
 
         // Check if cancelled after navigation
         if (signal?.aborted) {
+          console.log("Request was canceled after navigation");
           throw new Error("Request was canceled");
         }
 
@@ -54,7 +73,8 @@ class GovMapService {
         }
         attempts++;
       } catch (error) {
-        if (error.message === "Request was canceled" || signal?.aborted) {
+        if (error.message.includes("Request was canceled") || signal?.aborted) {
+          console.log("Request was canceled, error response not sent");
           throw new Error("Request was canceled");
         }
         attempts++;

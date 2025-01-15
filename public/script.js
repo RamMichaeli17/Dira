@@ -21,7 +21,7 @@ const startConversion = async () => {
   uiUtils.showLoading();
 
   if (abortController) {
-    abortController.abort();
+    await cancelConversion(); // Wait for previous cancel to complete
   }
   abortController = new AbortController();
   requestState.setCurrentRequestId(Date.now().toString());
@@ -57,7 +57,6 @@ const startConversion = async () => {
 
 // Enhance the updateQueueStatus function
 const updateQueueStatus = async () => {
-  // Only proceed if we have a valid currentRequestId
   if (!requestState.getCurrentRequestId()) {
     return;
   }
@@ -68,13 +67,11 @@ const updateQueueStatus = async () => {
     });
     const data = await response.json();
 
-    // Only update UI if this request is still valid (not canceled)
     if (requestState.getCurrentRequestId()) {
       const isFirstInQueue =
         data.currentRequestId === requestState.getCurrentRequestId();
       uiUtils.updateQueueDisplay(data.queueLength, isFirstInQueue);
 
-      // Continue polling only if we're still in queue and request wasn't canceled
       if (!isFirstInQueue && data.queueLength > 0) {
         setTimeout(updateQueueStatus, 1000);
       }
@@ -89,16 +86,22 @@ const cancelConversion = async () => {
     abortController.abort();
     document.getElementById("loading").style.display = "none";
     document.getElementById("queueStatus").style.display = "none";
-    requestState.clearCurrentRequestId();
 
     try {
-      await fetch("/cancel", {
+      // Wait for the cancel request to complete
+      const response = await fetch("/cancel", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "X-Request-ID": requestState.getCurrentRequestId(),
         },
       });
+
+      if (response.ok) {
+        // Only clear request ID after successful cancellation
+        requestState.clearCurrentRequestId();
+        document.getElementById("output").innerHTML = "<p>Request canceled</p>";
+      }
     } catch (error) {
       console.error("Cancel error:", error);
     }
@@ -111,9 +114,10 @@ document.getElementById("convertButton").addEventListener("click", () => {
   updateQueueStatus();
 });
 
-document
-  .getElementById("cancelButton")
-  .addEventListener("click", cancelConversion);
+document.getElementById("cancelButton").addEventListener("click", async () => {
+  // Wait for cancellation to complete
+  await cancelConversion();
+});
 
 document.getElementById("projectInput").addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
