@@ -20,25 +20,67 @@ class ProjectDetailsService {
   }
 
   async findProjectByLottery(lotteryNumber) {
-    const links = await browserService.mainPage.evaluate((lottery) => {
-      const anchors = Array.from(document.querySelectorAll("a.details-button"));
-      return anchors
-        .map((anchor) => anchor.href)
-        .filter((href) => {
-          const regex = new RegExp(
-            `https://www\\.dira\\.moch\\.gov\\.il/\\d{5}/${lottery}/ProjectInfo`
-          );
-          return regex.test(href);
-        });
-    }, lotteryNumber);
+    const page = await browserService.mainPage;
 
-    if (!links.length) {
+    // Input lottery number
+    const inputSelector = "#lotteryNumber";
+    await page.waitForSelector(inputSelector);
+    await page.type(inputSelector, lotteryNumber);
+
+    // Click search button
+    const searchText = "חיפוש";
+    await page.waitForFunction(
+      (text) => {
+        return Array.from(document.querySelectorAll("a")).some((a) =>
+          a.textContent.trim().includes(text)
+        );
+      },
+      {},
+      searchText
+    );
+
+    await page.evaluate((text) => {
+      const button = Array.from(document.querySelectorAll("a")).find((a) =>
+        a.textContent.trim().includes(text)
+      );
+      if (button) {
+        button.click();
+      }
+    }, searchText);
+
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // Click details button
+    const detailsText = "פרטים";
+    try {
+      await page.waitForFunction(
+        (text) => {
+          return Array.from(document.querySelectorAll("button")).some(
+            (button) => button.textContent.trim().includes(text)
+          );
+        },
+        { timeout: 2000 },
+        detailsText
+      );
+
+      await page.evaluate((text) => {
+        const button = Array.from(document.querySelectorAll("button")).find(
+          (btn) => btn.textContent.trim().includes(text)
+        );
+        if (button) {
+          button.click();
+        }
+      }, detailsText);
+    } catch (error) {
       throw new Error(`No project found for lottery number: ${lotteryNumber}`);
     }
 
-    const matches = links[0].match(/\/(\d{5})\/(\d{4})\/ProjectInfo/);
+    // Get the URL after clicking details
+    const currentURL = page.url();
+    const matches = currentURL.match(/\/(\d{5})\/(\d{4})\/ProjectInfo/);
+
     if (!matches) {
-      throw new Error("Failed to extract project number from link");
+      throw new Error("Failed to extract project number from URL");
     }
 
     return {

@@ -23,14 +23,9 @@ class BrowserService {
       this.mainPage = await this.browser.newPage();
       await this.mainPage.setViewport({ width: 1920, height: 1080 });
       console.log("Browser initialized successfully");
-      
+
       await this.resetMainPage();
       console.log("Main page loaded successfully");
-      
-      // Apply zoom level
-      await this.mainPage.evaluate(() => {
-        document.body.style.zoom = "80%";
-      });
     } catch (error) {
       console.error("Browser initialization failed:", error);
       throw error;
@@ -53,12 +48,39 @@ class BrowserService {
   /**
    * Reset main page to initial URL
    */
+
   async resetMainPage() {
     try {
-      await this.mainPage.goto("https://better-dira.netlify.app/", {
+      await this.mainPage.goto("https://www.dira.moch.gov.il/ProjectsList", {
         waitUntil: "networkidle2",
         timeout: 90000,
       });
+
+      // Handle the initial approval button if present
+      try {
+        const buttonText = "אישור";
+        await this.mainPage.waitForFunction(
+          (text) => {
+            return Array.from(document.querySelectorAll("button")).some(
+              (button) => button.textContent.trim() === text
+            );
+          },
+          { timeout: 5000 },
+          buttonText
+        );
+
+        await this.mainPage.evaluate((text) => {
+          const button = Array.from(document.querySelectorAll("button")).find(
+            (btn) => btn.textContent.trim() === text
+          );
+          if (button) {
+            button.click();
+          }
+        }, buttonText);
+      } catch (error) {
+        // If button not found or other error, continue (button might not always be present)
+        console.log("Approval button not found or already approved");
+      }
     } catch (error) {
       console.error("Failed to reset main page:", error);
       throw error;
