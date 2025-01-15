@@ -9,6 +9,7 @@ export const uiUtils = {
    */
   showLoading: () => {
     document.getElementById("loading").style.display = "block";
+    document.getElementById("queueStatus").style.display = "none";
     document.getElementById("output").innerHTML = "";
     document.getElementById("mapPreview").style.display = "none";
     document.getElementById("googleMapPreview").style.display = "none";
@@ -26,32 +27,40 @@ export const uiUtils = {
    */
   updateQueueDisplay: (queueLength, isFirstInQueue) => {
     const queueStatusDiv = document.getElementById("queueStatus");
+    const loadingDiv = document.getElementById("loading");
 
-    if (queueLength === 0 || isFirstInQueue) {
-      queueStatusDiv.style.display = "none";
+    // Hide both initially
+    queueStatusDiv.style.display = "none";
+    loadingDiv.style.display = "none";
+
+    if (queueLength === 0) {
       return;
     }
 
-    // Update queue status HTML structure
-    queueStatusDiv.innerHTML = `
-      <div class="queue-message">Your request is in queue</div>
-      <div class="queue-progress-bar">
-        <div class="progress-fill"></div>
-      </div>
-    `;
-
-    const progressFill = queueStatusDiv.querySelector(".progress-fill");
-    if (!progressFill.classList.contains("animate")) {
-      progressFill.classList.add("animate");
+    if (isFirstInQueue) {
+      // Show processing for first in queue
+      loadingDiv.style.display = "block";
+    } else {
+      // Show queue status for others
+      queueStatusDiv.innerHTML = `
+        <div class="queue-message">Your request is in queue</div>
+        <div class="queue-dots">
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+        </div>
+      `;
+      queueStatusDiv.style.display = "block";
     }
-
-    queueStatusDiv.style.display = "block";
   },
 
   /**
    * Display results
    */
   displayResults: (data) => {
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("queueStatus").style.display = "none";
+
     const outputDiv = document.getElementById("output");
     const govMapPreviewDiv = document.getElementById("mapPreview");
     const googleMapPreviewDiv = document.getElementById("googleMapPreview");

@@ -56,6 +56,9 @@ const startConversion = async () => {
 const cancelConversion = async () => {
   if (abortController) {
     abortController.abort();
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("queueStatus").style.display = "none";
+
     try {
       await fetch("/cancel", {
         method: "POST",
