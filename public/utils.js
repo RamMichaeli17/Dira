@@ -25,6 +25,28 @@ export const uiUtils = {
   },
 
   /**
+   * Show error message
+   * @param {string} message Error message to display
+   */
+  showError: (message) => {
+    const outputDiv = document.getElementById("output");
+    outputDiv.innerHTML = `<div class="error-message">${message}</div>`;
+    outputDiv.style.display = "block";
+    // Hide other elements when showing error
+    document.getElementById("mapPreview").style.display = "none";
+    document.getElementById("googleMapPreview").style.display = "none";
+    document.getElementById("queueStatus").style.display = "none";
+  },
+
+  /**
+   * Hide error message
+   */
+  hideError: () => {
+    const outputDiv = document.getElementById("output");
+    outputDiv.innerHTML = "";
+  },
+
+  /**
    * Update queue display
    */
   updateQueueDisplay: (queueLength, isFirstInQueue) => {
@@ -68,6 +90,11 @@ export const uiUtils = {
     const govMapFrame = document.getElementById("govMapFrame");
     const googleMapFrame = document.getElementById("googleMapFrame");
 
+    if (data.error) {
+      uiUtils.showError(data.error);
+      return;
+    }
+
     if (data.googleMapsUrl && data.updatedUrl) {
       outputDiv.innerHTML = `
         <p><strong>Updated URL:</strong></p>
@@ -82,7 +109,7 @@ export const uiUtils = {
       govMapPreviewDiv.style.display = "block";
       googleMapPreviewDiv.style.display = "block";
     } else {
-      outputDiv.innerHTML = `<p>Error: ${data.error}</p>`;
+      outputDiv.innerHTML = `<p>Error: Could not generate map URLs</p>`;
     }
   },
 };

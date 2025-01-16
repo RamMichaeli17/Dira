@@ -2,21 +2,32 @@ const browserService = require("./browser-service");
 // services/project-details-service.js
 class ProjectDetailsService {
   async extractProjectDetails(projectInput) {
-    if (/^\d{4}$/.test(projectInput)) {
+    // Validate input format
+    if (
+      !/^\d{3,5}$/.test(projectInput) &&
+      !/^https?:\/\/www\.dira\.moch\.gov\.il/.test(projectInput)
+    ) {
+      throw new Error(
+        "Invalid input. Please enter a 3-5 digit number or a valid dira.moch.gov.il URL."
+      );
+    }
+
+    // Handle 3 or 4 digit lottery numbers
+    if (/^\d{3,4}$/.test(projectInput)) {
       return this.findProjectByLottery(projectInput);
     }
 
+    // Handle 5 digit project numbers
     if (/^\d{5}$/.test(projectInput)) {
       return { projectNumber: projectInput, lotteryNumber: null };
     }
 
-    if (/https?:\/\//.test(projectInput)) {
+    // Handle URLs
+    if (/^https?:\/\/www\.dira\.moch\.gov\.il/.test(projectInput)) {
       return this.extractFromUrl(projectInput);
     }
 
-    throw new Error(
-      "Invalid input format. Expected project number, lottery number, or URL."
-    );
+    throw new Error("Invalid input format.");
   }
 
   async findProjectByLottery(lotteryNumber) {
@@ -77,7 +88,7 @@ class ProjectDetailsService {
 
     // Get the URL after clicking details
     const currentURL = page.url();
-    const matches = currentURL.match(/\/(\d{5})\/(\d{4})\/ProjectInfo/);
+    const matches = currentURL.match(/\/(\d{2,5})\/(\d{3,4})\/ProjectInfo/);
 
     if (!matches) {
       throw new Error("Failed to extract project number from URL");

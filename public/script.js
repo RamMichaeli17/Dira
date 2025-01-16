@@ -6,22 +6,47 @@ import { requestState } from "./stateUtils.js";
 let abortController = null;
 
 /**
+ * Validate project input
+ * @param {string} input - User input to validate
+ * @returns {boolean} - Whether input is valid
+ */
+const validateInput = (input) => {
+  const trimmedInput = input.trim();
+
+  // Check for 3-5 digit numbers
+  const isValidNumber = /^\d{3,5}$/.test(trimmedInput);
+
+  // Check for valid URL
+  const isValidUrl = /^https?:\/\/www\.dira\.moch\.gov\.il/.test(trimmedInput);
+
+  return isValidNumber || isValidUrl;
+};
+
+/**
  * Start conversion process
  */
 const startConversion = async () => {
   const projectInput = document.getElementById("projectInput").value.trim();
+
+  // Input validation
   if (!projectInput) {
-    alert("Please enter a project URL or number");
-    uiUtils.hideLoading();
-    document.getElementById("queueStatus").style.display = "none";
+    uiUtils.showError("Please enter a project URL or number");
+    return;
+  }
+
+  if (!validateInput(projectInput)) {
+    uiUtils.showError(
+      "Invalid input. Please enter a 3-5 digit number or a valid dira.moch.gov.il URL."
+    );
     return;
   }
 
   buttonUtils.updateButtonStates(true);
   uiUtils.showLoading();
+  uiUtils.hideError(); // Hide any previous error messages
 
   if (abortController) {
-    await cancelConversion(); // Wait for previous cancel to complete
+    await cancelConversion();
   }
   abortController = new AbortController();
   requestState.setCurrentRequestId(Date.now().toString());
@@ -38,16 +63,19 @@ const startConversion = async () => {
     });
 
     const data = await response.json();
-    if (data.requestId === requestState.getCurrentRequestId()) {
+
+    if (data.error) {
+      uiUtils.showError(data.error);
+    } else if (data.requestId === requestState.getCurrentRequestId()) {
       uiUtils.displayResults(data);
     }
   } catch (error) {
     if (!abortController.signal.aborted) {
-      document.getElementById("output").innerHTML = "<p>Error occurred</p>";
+      uiUtils.showError("An error occurred while processing your request");
     }
   } finally {
     if (abortController.signal.aborted) {
-      document.getElementById("output").innerHTML = "<p>Request canceled</p>";
+      uiUtils.showError("Request canceled");
     }
     uiUtils.hideLoading();
     buttonUtils.updateButtonStates(false);

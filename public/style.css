@@ -237,3 +237,14 @@ footer {
 .progress-fill.animate {
   animation: progress 30s linear infinite;
 }
+
+.error-message {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 12px;
+  border-radius: 4px;
+  border: 1px solid #ef9a9a;
+  margin: 10px 0;
+  font-size: 14px;
+  text-align: center;
+}
