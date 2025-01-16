@@ -20,7 +20,10 @@ async function processQueue() {
       }
 
       if (abortController.signal.aborted) {
-        throw new Error("Request was canceled");
+        // Silent exit for aborted requests
+        queueService.remove();
+        queueService.setProcessingStatus(false);
+        return;
       }
 
       const result = await conversionService.processProjectInput(
@@ -36,10 +39,11 @@ async function processQueue() {
         });
       }
     } catch (error) {
-      console.error("Error processing request:", error);
       const { res, abortController } = currentRequest;
 
+      // Only log and respond with error if request wasn't canceled
       if (!abortController.signal.aborted) {
+        console.error("Error processing request:", error);
         res.status(500).json({
           error: error.message || "An error occurred during processing",
           requestId: currentRequest.id,

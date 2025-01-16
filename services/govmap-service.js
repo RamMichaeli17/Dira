@@ -9,30 +9,38 @@ class GovMapService {
 
     let attempts = 0;
     const maxAttempts = 3;
+    let pageAlreadyClosed = false;
+    let abortHandlerCalled = false;
 
-    // Enhanced abort handler
+    // Enhanced abort handler with guard
     const abortHandler = async () => {
+      if (abortHandlerCalled) return;
+      abortHandlerCalled = true;
+
       console.log("Navigation aborted");
       try {
-        // Force stop the page loading
-        await page.evaluate(() => window.stop());
-        if (!page.isClosed()) {
+        if (!pageAlreadyClosed && !page.isClosed()) {
+          // Force stop the page loading
+          await page.evaluate(() => window.stop());
           await page.close();
+          pageAlreadyClosed = true;
+          console.log("Page closed successfully during abort");
         }
-        console.log("Conversion canceled");
       } catch (error) {
-        console.error("Error during abort cleanup:", error);
+        console.error("Non-critical error during abort cleanup:", error);
       }
     };
 
     // Set up abort handler
-    signal?.addEventListener("abort", abortHandler);
+    if (signal) {
+      signal.addEventListener("abort", abortHandler, { once: true });
+    }
 
     while (attempts < maxAttempts) {
       try {
         // Check if cancelled before navigation
         if (signal?.aborted) {
-          console.log("Request was canceled before navigation");
+          await abortHandler();
           throw new Error("Request was canceled");
         }
 
@@ -46,15 +54,21 @@ class GovMapService {
         await Promise.race([
           navigationPromise,
           new Promise((_, reject) => {
-            signal?.addEventListener("abort", () => {
-              reject(new Error("Request was canceled during navigation"));
-            });
+            if (signal) {
+              signal.addEventListener(
+                "abort",
+                () => {
+                  reject(new Error("Request was canceled during navigation"));
+                },
+                { once: true }
+              );
+            }
           }),
         ]);
 
         // Check if cancelled after navigation
         if (signal?.aborted) {
-          console.log("Request was canceled after navigation");
+          await abortHandler();
           throw new Error("Request was canceled");
         }
 
@@ -74,7 +88,9 @@ class GovMapService {
         attempts++;
       } catch (error) {
         if (error.message.includes("Request was canceled") || signal?.aborted) {
-          console.log("Request was canceled, error response not sent");
+          if (!abortHandlerCalled) {
+            await abortHandler();
+          }
           throw new Error("Request was canceled");
         }
         attempts++;

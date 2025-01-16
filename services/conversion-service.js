@@ -44,7 +44,9 @@ class ConversionService {
       newPage = await browserService.createNewPage();
 
       if (signal?.aborted) {
-        await newPage?.close();
+        if (newPage && !newPage.isClosed()) {
+          await newPage.close();
+        }
         throw new Error("Request canceled");
       }
 
@@ -61,7 +63,10 @@ class ConversionService {
       // Generate URLs from coordinates
       const urls = coordinatesService.generateUrls(projectNumber, coordinates);
 
-      await newPage?.close();
+      // Only close the page if it hasn't been closed already
+      if (newPage && !newPage.isClosed()) {
+        await newPage.close();
+      }
       await browserService.resetMainPage();
 
       const endTime = Date.now();
@@ -70,7 +75,10 @@ class ConversionService {
 
       return urls;
     } catch (error) {
-      await newPage?.close();
+      // Only try to close the page if it exists and hasn't been closed
+      if (newPage && !newPage.isClosed()) {
+        await newPage.close();
+      }
       await browserService.resetMainPage();
 
       if (signal?.aborted) {
@@ -81,5 +89,4 @@ class ConversionService {
   }
 }
 
-// Export a new instance of the service
 module.exports = new ConversionService();
