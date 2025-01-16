@@ -55,32 +55,6 @@ class BrowserService {
         waitUntil: "networkidle2",
         timeout: 90000,
       });
-
-      // Handle the initial approval button if present
-      try {
-        const buttonText = "אישור";
-        await this.mainPage.waitForFunction(
-          (text) => {
-            return Array.from(document.querySelectorAll("button")).some(
-              (button) => button.textContent.trim() === text
-            );
-          },
-          { timeout: 5000 },
-          buttonText
-        );
-
-        await this.mainPage.evaluate((text) => {
-          const button = Array.from(document.querySelectorAll("button")).find(
-            (btn) => btn.textContent.trim() === text
-          );
-          if (button) {
-            button.click();
-          }
-        }, buttonText);
-      } catch (error) {
-        // If button not found or other error, continue (button might not always be present)
-        console.log("Approval button not found or already approved");
-      }
     } catch (error) {
       console.error("Failed to reset main page:", error);
       throw error;
