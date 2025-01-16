@@ -2,6 +2,19 @@
 
 import { uiUtils, buttonUtils } from "./utils.js";
 import { requestState } from "./stateUtils.js";
+import { languageUtils } from "./languageUtils.js";
+
+window.handleLanguageChange = function (lang) {
+  languageUtils.setLanguage(lang);
+  updateLanguageButtons();
+};
+
+function updateLanguageButtons() {
+  const currentLang = languageUtils.getCurrentLanguage();
+  document.querySelectorAll(".lang-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.lang === currentLang);
+  });
+}
 
 let abortController = null;
 
@@ -155,4 +168,12 @@ document.getElementById("projectInput").addEventListener("keydown", (event) => {
     startConversion();
     updateQueueStatus();
   }
+});
+
+// הוסף בסוף ה-DOMContentLoaded event:
+document.addEventListener("DOMContentLoaded", () => {
+  // Initialize language from localStorage or default
+  const savedLang = localStorage.getItem("preferredLanguage") || "he";
+  languageUtils.setLanguage(savedLang);
+  updateLanguageButtons();
 });

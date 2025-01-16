@@ -278,3 +278,39 @@ footer {
   opacity: 0.7;
   cursor: not-allowed !important;
 }
+
+.language-switcher {
+  margin: 10px 0;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.lang-btn {
+  padding: 5px 15px;
+  border: 1px solid #2d89ef;
+  background: transparent;
+  color: #2d89ef;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.lang-btn:hover {
+  background: #2d89ef;
+  color: white;
+}
+
+.lang-btn.active {
+  background: #2d89ef;
+  color: white;
+}
+
+/* RTL Support */
+[dir="rtl"] .container {
+  text-align: right;
+}
+
+[dir="rtl"] .button-container {
+  direction: rtl;
+}
