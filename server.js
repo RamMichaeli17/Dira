@@ -7,6 +7,7 @@ require("dotenv").config();
 // Import services and routes
 const browserService = require("./services/browser-service");
 const conversionRoutes = require("./routes/conversion-routes");
+const redisService = require("./services/redis-service");
 
 // Initialize express app
 const app = express();
@@ -24,7 +25,7 @@ app.use("/", conversionRoutes);
  */
 process.on("SIGINT", async () => {
   console.log("\nInitiating graceful shutdown...");
-  await browserService.close();
+  await Promise.all([browserService.close(), redisService.close()]);
   console.log("Server shutdown complete");
   process.exit(0);
 });
@@ -35,7 +36,7 @@ process.on("unhandledRejection", (reason, promise) => {
 
 process.on("uncaughtException", (error) => {
   console.error("Uncaught Exception:", error);
-  browserService.close()
+  Promise.all([browserService.close(), redisService.close()])
     .then(() => process.exit(1))
     .catch(() => process.exit(1));
 });
@@ -52,7 +53,7 @@ process.on("uncaughtException", (error) => {
     // Start server
     app.listen(PORT, () => {
       console.log(`Server is running on http://localhost:${PORT}`);
-      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
     });
   } catch (error) {
     console.error("Failed to initialize server:", error);

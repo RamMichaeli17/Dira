@@ -5,6 +5,7 @@ const coordinatesService = require("./coordinates-service");
 const govmapService = require("./govmap-service");
 const projectDetailsService = require("./project-details-service");
 const urlService = require("./url-service");
+const redisService = require("./redis-service");
 
 class ConversionService {
   /**
@@ -22,25 +23,24 @@ class ConversionService {
         throw new Error("Request canceled");
       }
 
-      // Get project number
-      let projectNumber = null;
+      // Get project details
+      const details = await projectDetailsService.extractProjectDetails(
+        projectInput
+      );
+      const projectNumber = details.projectNumber;
 
-      try {
-        // First try to get via project details
-        const details = await projectDetailsService.extractProjectDetails(
-          projectInput
-        );
-        projectNumber = details.projectNumber;
-      } catch (error) {
-        // If that fails, try direct extraction
-        projectNumber = urlService.extractProjectNumber(projectInput);
+      console.log(`Processing project number: ${projectNumber}`);
+
+      // Check cache first
+      const cachedData = await redisService.getProjectData(projectNumber);
+      if (cachedData) {
+        console.log(`Cache hit for project ${projectNumber}`);
+        return cachedData;
       }
 
-      if (!projectNumber) {
-        throw new Error("Could not determine project number");
-      }
+      console.log(`Cache miss for project ${projectNumber}, fetching data...`);
 
-      // Create new page and get coordinates
+      // If not in cache, proceed with browser automation
       newPage = await browserService.createNewPage();
 
       if (signal?.aborted) {
@@ -63,7 +63,11 @@ class ConversionService {
       // Generate URLs from coordinates
       const urls = coordinatesService.generateUrls(projectNumber, coordinates);
 
-      // Only close the page if it hasn't been closed already
+      // Cache the results
+      await redisService.setProjectData(projectNumber, urls);
+      console.log(`Cached data for project ${projectNumber}`);
+
+      // Cleanup
       if (newPage && !newPage.isClosed()) {
         await newPage.close();
       }
@@ -75,7 +79,8 @@ class ConversionService {
 
       return urls;
     } catch (error) {
-      // Only try to close the page if it exists and hasn't been closed
+      console.error("Error in processProjectInput:", error);
+
       if (newPage && !newPage.isClosed()) {
         await newPage.close();
       }
