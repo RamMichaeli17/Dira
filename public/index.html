@@ -13,7 +13,10 @@
     <h1>Project Link Converter</h1>
     <p>Enter a project URL or number below:</p>
     <input type="text" id="projectInput" placeholder="Enter project URL or number..." />
-    <button id="convertButton">Convert</button>
+    <div class="button-container">
+      <button id="convertButton">Convert</button>
+      <div class="cooldown-progress"></div>
+    </div>
     <button id="cancelButton" style="display: none;">Cancel</button>
 
     <!-- Loading Spinner -->

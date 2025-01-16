@@ -129,6 +129,9 @@ const cancelConversion = async () => {
         // Only clear request ID after successful cancellation
         requestState.clearCurrentRequestId();
         document.getElementById("output").innerHTML = "<p>Request canceled</p>";
+
+        // Start cooldown after successful cancellation
+        buttonUtils.startCooldown();
       }
     } catch (error) {
       console.error("Cancel error:", error);

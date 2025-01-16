@@ -248,3 +248,33 @@ footer {
   font-size: 14px;
   text-align: center;
 }
+
+@keyframes cooldown {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.button-container {
+  position: relative;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.cooldown-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  width: 0%;
+  background-color: #2d89ef;
+  border-radius: 0 0 8px 8px;
+}
+
+.cooldown-active {
+  opacity: 0.7;
+  cursor: not-allowed !important;
+}

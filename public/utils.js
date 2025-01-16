@@ -128,4 +128,42 @@ export const buttonUtils = {
     convertButton.disabled = isConverting;
     cancelButton.style.display = isConverting ? "inline-block" : "none";
   },
+
+  startCooldown: () => {
+    const convertButton = document.getElementById("convertButton");
+    const cooldownDuration = 5000; // 5 seconds
+
+    // Create or get cooldown progress bar
+    let progressBar = document.querySelector(".cooldown-progress");
+    if (!progressBar) {
+      // Wrap button in container if not already wrapped
+      let container = document.querySelector(".button-container");
+      if (!container) {
+        container = document.createElement("div");
+        container.className = "button-container";
+        convertButton.parentNode.insertBefore(container, convertButton);
+        container.appendChild(convertButton);
+      }
+
+      progressBar = document.createElement("div");
+      progressBar.className = "cooldown-progress";
+      container.appendChild(progressBar);
+    }
+
+    // Add cooldown state
+    convertButton.disabled = true;
+    convertButton.classList.add("cooldown-active");
+
+    // Reset and start animation
+    progressBar.style.animation = "none";
+    progressBar.offsetHeight; // Trigger reflow
+    progressBar.style.animation = `cooldown ${cooldownDuration}ms linear`;
+
+    // Remove cooldown after duration
+    setTimeout(() => {
+      convertButton.disabled = false;
+      convertButton.classList.remove("cooldown-active");
+      progressBar.style.animation = "none";
+    }, cooldownDuration);
+  },
 };
