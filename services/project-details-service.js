@@ -30,74 +30,117 @@ class ProjectDetailsService {
     throw new Error("Invalid input format.");
   }
 
-  async findProjectByLottery(lotteryNumber) {
-    const page = await browserService.mainPage;
+  async findProjectByLottery(lotteryNumber, signal) {
+    const page = browserService.mainPage;
 
-    // Input lottery number
-    const inputSelector = "#lotteryNumber";
-    await page.waitForSelector(inputSelector);
-    await page.type(inputSelector, lotteryNumber);
-
-    // Click search button
-    const searchText = "חיפוש";
-    await page.waitForFunction(
-      (text) => {
-        return Array.from(document.querySelectorAll("a")).some((a) =>
-          a.textContent.trim().includes(text)
-        );
-      },
-      {},
-      searchText
-    );
-
-    await page.evaluate((text) => {
-      const button = Array.from(document.querySelectorAll("a")).find((a) =>
-        a.textContent.trim().includes(text)
-      );
-      if (button) {
-        button.click();
-      }
-    }, searchText);
-
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    // Click details button
-    const detailsText = "פרטים";
     try {
-      await page.waitForFunction(
+      if (signal?.aborted) {
+        console.log("Request was canceled before processing lottery number");
+        throw new Error("Request was canceled");
+      }
+
+      // Setup abort handler for navigation
+      const abortHandler = () => {
+        console.log("Aborting lottery number processing");
+        page.evaluate(() => window.stop());
+      };
+      signal?.addEventListener("abort", abortHandler);
+
+      // Reset page state
+      await page.evaluate(() => {
+        const input = document.querySelector("#lotteryNumber");
+        if (input) input.value = "";
+      });
+
+      // Input lottery number
+      const inputSelector = "#lotteryNumber";
+      await page.waitForSelector(inputSelector, { timeout: 5000 });
+      await page.type(inputSelector, lotteryNumber);
+
+      if (signal?.aborted) {
+        throw new Error("Request was canceled");
+      }
+
+      // Click search button
+      const searchButton = await page.evaluateHandle((searchText) => {
+        return Array.from(document.querySelectorAll("a")).find((a) =>
+          a.textContent.trim().includes(searchText)
+        );
+      }, "חיפוש");
+
+      if (!searchButton) {
+        throw new Error("Search button not found");
+      }
+
+      await Promise.race([
+        searchButton.click(),
+        new Promise((_, reject) => {
+          signal?.addEventListener("abort", () =>
+            reject(new Error("Request was canceled"))
+          );
+        }),
+      ]);
+
+      if (signal?.aborted) {
+        throw new Error("Request was canceled");
+      }
+
+      // Wait for details button with timeout
+      const detailsButtonPromise = page.waitForFunction(
         (text) => {
           return Array.from(document.querySelectorAll("button")).some(
             (button) => button.textContent.trim().includes(text)
           );
         },
-        { timeout: 2000 },
-        detailsText
+        { timeout: 5000 },
+        "פרטים"
       );
 
+      await Promise.race([
+        detailsButtonPromise,
+        new Promise((_, reject) => {
+          signal?.addEventListener("abort", () =>
+            reject(new Error("Request was canceled"))
+          );
+        }),
+      ]);
+
+      if (signal?.aborted) {
+        throw new Error("Request was canceled");
+      }
+
+      // Click details button
       await page.evaluate((text) => {
         const button = Array.from(document.querySelectorAll("button")).find(
           (btn) => btn.textContent.trim().includes(text)
         );
-        if (button) {
-          button.click();
-        }
-      }, detailsText);
+        if (button) button.click();
+      }, "פרטים");
+
+      // Get URL and extract numbers
+      const currentURL = page.url();
+      const matches = currentURL.match(/\/(\d{2,5})\/(\d{3,4})\/ProjectInfo/);
+
+      if (!matches) {
+        throw new Error("Failed to extract project number from URL");
+      }
+
+      return {
+        projectNumber: matches[1],
+        lotteryNumber: matches[2],
+      };
     } catch (error) {
-      throw new Error(`No project found for lottery number: ${lotteryNumber}`);
+      if (error.message.includes("Request was canceled") || signal?.aborted) {
+        console.log("Lottery number processing was canceled");
+        // Ensure page is in a clean state after cancellation
+        try {
+          await browserService.resetMainPage();
+        } catch (resetError) {
+          console.error("Error resetting page after cancellation:", resetError);
+        }
+      }
+      throw error;
     }
-
-    // Get the URL after clicking details
-    const currentURL = page.url();
-    const matches = currentURL.match(/\/(\d{2,5})\/(\d{3,4})\/ProjectInfo/);
-
-    if (!matches) {
-      throw new Error("Failed to extract project number from URL");
-    }
-
-    return {
-      projectNumber: matches[1],
-      lotteryNumber: matches[2],
-    };
   }
 
   extractFromUrl(url) {
