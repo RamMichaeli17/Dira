@@ -32,6 +32,7 @@ class ProjectDetailsService {
 
   async findProjectByLottery(lotteryNumber) {
     const page = await browserService.mainPage;
+    await page.reload();
 
     // Input lottery number
     const inputSelector = "#lotteryNumber";
