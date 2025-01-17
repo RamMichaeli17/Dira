@@ -32,7 +32,7 @@ class RedisService {
    */
   async getProjectData(projectNumber) {
     try {
-      const data = await this.client.get(`project:${projectNumber}`);
+      const data = await this.client.get(projectNumber);
       return data ? JSON.parse(data) : null;
     } catch (error) {
       console.error("Redis get error:", error);
@@ -49,7 +49,7 @@ class RedisService {
   async setProjectData(projectNumber, data, ttl = 604800) {
     try {
       await this.client.set(
-        `project:${projectNumber}`,
+        projectNumber,
         JSON.stringify(data),
         "EX",
         ttl
@@ -65,7 +65,7 @@ class RedisService {
    */
   async clearProjectData(projectNumber) {
     try {
-      await this.client.del(`project:${projectNumber}`);
+      await this.client.del(projectNumber);
     } catch (error) {
       console.error("Redis delete error:", error);
     }

@@ -23,6 +23,15 @@ class ConversionService {
         throw new Error("Request canceled");
       }
 
+      // Check cache first
+      const cachedData = await redisService.getProjectData(projectInput);
+      if (cachedData) {
+        console.log(`Cache hit for project ${projectInput}`);
+        return cachedData;
+      }
+
+      console.log(`Cache miss for project ${projectInput}, fetching data...`);
+
       // Get project details
       const details = await projectDetailsService.extractProjectDetails(
         projectInput
@@ -30,15 +39,6 @@ class ConversionService {
       const projectNumber = details.projectNumber;
 
       console.log(`Processing project number: ${projectNumber}`);
-
-      // Check cache first
-      const cachedData = await redisService.getProjectData(projectNumber);
-      if (cachedData) {
-        console.log(`Cache hit for project ${projectNumber}`);
-        return cachedData;
-      }
-
-      console.log(`Cache miss for project ${projectNumber}, fetching data...`);
 
       // If not in cache, proceed with browser automation
       newPage = await browserService.createNewPage();
@@ -64,8 +64,8 @@ class ConversionService {
       const urls = coordinatesService.generateUrls(projectNumber, coordinates);
 
       // Cache the results
-      await redisService.setProjectData(projectNumber, urls);
-      console.log(`Cached data for project ${projectNumber}`);
+      await redisService.setProjectData(projectInput, urls);
+      console.log(`Cached data for project ${projectInput}`);
 
       // Cleanup
       if (newPage && !newPage.isClosed()) {
