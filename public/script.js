@@ -84,6 +84,7 @@ const startConversion = async () => {
     }
   } catch (error) {
     if (!abortController.signal.aborted) {
+      console.log(error);
       uiUtils.showError("An error occurred while processing your request");
     }
   } finally {

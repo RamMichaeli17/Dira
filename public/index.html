@@ -12,8 +12,10 @@
   <div class="container">
     <h1>Project Link Converter</h1>
     <div class="language-switcher">
-      <button onclick="handleLanguageChange('he')" class="lang-btn" data-lang="he">עברית</button>
-      <button onclick="handleLanguageChange('en')" class="lang-btn" data-lang="en">English</button>
+      <select class="language-select" onchange="handleLanguageChange(this.value)">
+        <option value="he">עברית</option>
+        <option value="en">English</option>
+      </select>
     </div>
     <p>Enter a project URL or number below:</p>
     <input type="text" id="projectInput" placeholder="Enter project URL or number..." />

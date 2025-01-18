@@ -1,6 +1,8 @@
 // public/utils.js
 
+import { languageUtils } from "./languageUtils.js";
 import { requestState } from "./stateUtils.js";
+import { translations } from "./translations.js";
 
 /**
  * UI utility functions
@@ -90,26 +92,41 @@ export const uiUtils = {
     const govMapFrame = document.getElementById("govMapFrame");
     const googleMapFrame = document.getElementById("googleMapFrame");
 
+    const currentLang = languageUtils.getCurrentLanguage();
+    const labels = translations[currentLang].mapLabels;
+    const errorMessages = translations[currentLang].errorMessages;
+
     if (data.error) {
-      uiUtils.showError(data.error);
+      outputDiv.innerHTML = `<div class="error-message">${errorMessages.processingError}</div>`;
       return;
     }
 
     if (data.googleMapsUrl && data.updatedUrl) {
+      // Update Google Maps URL with correct language parameter
+      const langParam = currentLang === "he" ? "iw" : "en";
+      const googleMapsUrl = data.googleMapsUrl.replace(
+        /[?&]hl=\w+/,
+        `?hl=${langParam}`
+      );
+      const googleMapsIframeUrl = data.googleMapsIframeUrl.replace(
+        /[?&]hl=\w+/,
+        `?hl=${langParam}`
+      );
+
       outputDiv.innerHTML = `
-        <p><strong>Updated URL:</strong></p>
+        <p><strong>${labels.updatedUrl}</strong></p>
         <a href="${data.updatedUrl}" target="_blank">${data.updatedUrl}</a>
-        <p><strong>Google Maps URL:</strong></p>
-        <a href="${data.googleMapsUrl}" target="_blank">${data.googleMapsUrl}</a>
+        <p><strong>${labels.googleMaps}</strong></p>
+        <a href="${googleMapsUrl}" target="_blank">${googleMapsUrl}</a>
       `;
 
       govMapFrame.src = data.govMapIframeUrl;
-      googleMapFrame.src = data.googleMapsIframeUrl;
+      googleMapFrame.src = googleMapsIframeUrl;
 
       govMapPreviewDiv.style.display = "block";
       googleMapPreviewDiv.style.display = "block";
     } else {
-      outputDiv.innerHTML = `<p>Error: Could not generate map URLs</p>`;
+      outputDiv.innerHTML = `<div class="error-message">${errorMessages.processingError}</div>`;
     }
   },
 };

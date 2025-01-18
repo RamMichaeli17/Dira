@@ -32,6 +32,8 @@ export const languageUtils = {
 
     // Update main content
     document.querySelector("p").textContent = this.getText("inputLabel");
+    document.querySelector("#projectInput").placeholder =
+      this.getText("inputPlaceholder");
     document.querySelector("#convertButton").textContent =
       this.getText("convertButton");
     document.querySelector("#cancelButton").textContent =
@@ -40,5 +42,8 @@ export const languageUtils = {
     // Update loading text
     document.querySelector("#loading p").textContent =
       this.getText("processingText");
+
+    //Update footer
+    document.querySelector("footer").textContent = this.getText("footer");
   },
 };

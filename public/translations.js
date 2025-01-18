@@ -3,6 +3,7 @@ export const translations = {
   en: {
     title: "Project Link Converter",
     inputLabel: "Enter a project URL or number below:",
+    inputPlaceholder: "Enter project URL or number...",
     convertButton: "Convert",
     cancelButton: "Cancel",
     processingText: "Processing...",
@@ -20,14 +21,15 @@ export const translations = {
       updatedUrl: "Updated URL:",
       googleMaps: "Google Maps URL:",
     },
-    footer: "Project Converter Tool - By Ram Michaeli",
+    footer: "© 2025 Project Converter Tool - By Ram Michaeli",
   },
   he: {
     title: "ממיר קישורי פרויקט",
     inputLabel: "הזן מספר או כתובת URL של פרויקט למטה:",
+    inputPlaceholder: "...הזן כתובת URL או מספר פרויקט",
     convertButton: "המר",
     cancelButton: "בטל",
-    processingText: "מעבד...",
+    processingText: "...מעבד",
     queuePosition: "מיקומך בתור",
     estimatedWait: "זמן המתנה משוער:",
     totalRequests: "סך הבקשות בתור:",
@@ -42,6 +44,6 @@ export const translations = {
       updatedUrl: "כתובת URL מעודכנת:",
       googleMaps: "כתובת URL של Google Maps:",
     },
-    footer: "כלי המרת פרויקטים - מאת רם מיכאלי",
+    footer: "© 2025 כלי המרת פרויקטים - מאת רם מיכאלי",
   },
 };
