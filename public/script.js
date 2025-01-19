@@ -7,6 +7,10 @@ import { languageUtils } from "./languageUtils.js";
 window.handleLanguageChange = function (lang) {
   languageUtils.setLanguage(lang);
   updateLanguageButtons();
+
+  // Update the data-value attribute of the select element
+  const languageSelect = document.querySelector(".language-select");
+  languageSelect.setAttribute("data-value", lang);
 };
 
 function updateLanguageButtons() {
@@ -177,5 +181,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const savedLang = localStorage.getItem("preferredLanguage") || "he";
   const languageSelect = document.querySelector(".language-select");
   languageSelect.value = savedLang;
+  languageSelect.setAttribute("data-value", savedLang);
   languageUtils.setLanguage(savedLang);
 });
