@@ -2,14 +2,14 @@
 
 import { translations } from "./translations.js";
 export const languageUtils = {
-  currentLang: "he", // Default language
+  currentLang: localStorage.getItem("preferredLanguage") || "he", // Set Hebrew as default
 
   setLanguage(lang) {
     this.currentLang = lang;
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === "he" ? "rtl" : "ltr";
     this.updateTexts();
-    localStorage.setItem("preferredLanguage", lang);
+    localStorage.setItem("preferredLanguage", lang); // Save preference
   },
 
   getCurrentLanguage() {

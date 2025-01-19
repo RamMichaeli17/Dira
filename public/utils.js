@@ -92,6 +92,10 @@ export const uiUtils = {
     const govMapFrame = document.getElementById("govMapFrame");
     const googleMapFrame = document.getElementById("googleMapFrame");
 
+    // Reset all map displays
+    govMapPreviewDiv.style.display = "none";
+    googleMapPreviewDiv.style.display = "none";
+
     const currentLang = languageUtils.getCurrentLanguage();
     const labels = translations[currentLang].mapLabels;
     const errorMessages = translations[currentLang].errorMessages;
@@ -104,27 +108,45 @@ export const uiUtils = {
     if (data.googleMapsUrl && data.updatedUrl) {
       // Update Google Maps URL with correct language parameter
       const langParam = currentLang === "he" ? "iw" : "en";
-      const googleMapsUrl = data.googleMapsUrl.replace(
-        /[?&]hl=\w+/,
-        `?hl=${langParam}`
-      );
-      const googleMapsIframeUrl = data.googleMapsIframeUrl.replace(
-        /[?&]hl=\w+/,
-        `?hl=${langParam}`
-      );
+      const googleMapsUrl = `${data.googleMapsUrl}&hl=${langParam}`;
 
       outputDiv.innerHTML = `
-        <p><strong>${labels.updatedUrl}</strong></p>
-        <a href="${data.updatedUrl}" target="_blank">${data.updatedUrl}</a>
-        <p><strong>${labels.googleMaps}</strong></p>
-        <a href="${googleMapsUrl}" target="_blank">${googleMapsUrl}</a>
+        <p dir="${currentLang === "he" ? "rtl" : "ltr"}">
+          <strong>${labels.updatedUrl}</strong>
+          <br>
+          <a href="${data.updatedUrl}" target="_blank">${data.updatedUrl}</a>
+        </p>
+        <p dir="${currentLang === "he" ? "rtl" : "ltr"}">
+          <strong>${labels.googleMaps}</strong>
+          <br>
+          <a href="${googleMapsUrl}" target="_blank">${googleMapsUrl}</a>
+        </p>
       `;
 
-      govMapFrame.src = data.govMapIframeUrl;
-      googleMapFrame.src = googleMapsIframeUrl;
+      // Handle GovMap iframe
+      if (data.govMapIframeUrl) {
+        govMapFrame.onerror = () => {
+          console.error("Failed to load GovMap iframe");
+          govMapPreviewDiv.style.display = "none";
+        };
+        govMapFrame.onload = () => {
+          govMapPreviewDiv.style.display = "block";
+        };
+        govMapFrame.src = data.govMapIframeUrl;
+      }
 
-      govMapPreviewDiv.style.display = "block";
-      googleMapPreviewDiv.style.display = "block";
+      // Handle Google Maps iframe
+      if (data.googleMapsIframeUrl) {
+        const googleMapsIframeUrl = `${data.googleMapsIframeUrl}&hl=${langParam}&zoom=15&output=embed`;
+        googleMapFrame.onerror = () => {
+          console.error("Failed to load Google Maps iframe");
+          googleMapPreviewDiv.style.display = "none";
+        };
+        googleMapFrame.onload = () => {
+          googleMapPreviewDiv.style.display = "block";
+        };
+        googleMapFrame.src = googleMapsIframeUrl;
+      }
     } else {
       outputDiv.innerHTML = `<div class="error-message">${errorMessages.processingError}</div>`;
     }

@@ -175,6 +175,7 @@ document.getElementById("projectInput").addEventListener("keydown", (event) => {
 document.addEventListener("DOMContentLoaded", () => {
   // Initialize language from localStorage or default
   const savedLang = localStorage.getItem("preferredLanguage") || "he";
+  const languageSelect = document.querySelector(".language-select");
+  languageSelect.value = savedLang;
   languageUtils.setLanguage(savedLang);
-  updateLanguageButtons();
 });
