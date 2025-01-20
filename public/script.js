@@ -16,11 +16,9 @@ window.handleLanguageChange = function (lang) {
     loadingOverlay.classList.add("active");
   }, 0);
 
-  // Set language
+  // Set language and update UI immediately
   languageUtils.setLanguage(lang);
-
-  // Update UI elements
-  updateLanguageButtons();
+  document.documentElement.dir = lang === "he" ? "rtl" : "ltr";
 
   // Close dropdown
   const select = document.querySelector(".custom-select");
@@ -30,7 +28,6 @@ window.handleLanguageChange = function (lang) {
   setTimeout(() => {
     location.reload();
   }, 400);
-
 };
 
 function updateLanguageButtons() {
@@ -202,9 +199,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const options = select.querySelectorAll(".select-option");
   const selectedText = select.querySelector(".selected-text");
   const triggerFlag = trigger.querySelector(".flag-icon");
+  const languageSwitcher = document.querySelector(".language-switcher");
 
-  // Set initial position based on saved language
+  // Set initial language and direction
   const savedLang = localStorage.getItem("preferredLanguage") || "he";
+  document.documentElement.dir = savedLang === "he" ? "rtl" : "ltr";
+
+  // Initialize language
+  languageUtils.setLanguage(savedLang);
+
+  // Set correct position before showing
+  setTimeout(() => {
+    languageSwitcher.classList.add("loaded");
+  }, 0);
+
+  // Set initial selection
   const initialOption = Array.from(options).find(
     (opt) => opt.dataset.value === savedLang
   );
@@ -214,9 +223,6 @@ document.addEventListener("DOMContentLoaded", () => {
     triggerFlag.src = initialOption.querySelector(".flag-icon").src;
     triggerFlag.alt = initialOption.querySelector(".flag-icon").alt;
   }
-
-  // Update language switcher position immediately
-  document.documentElement.dir = savedLang === "he" ? "rtl" : "ltr";
 
   // Toggle dropdown
   trigger.addEventListener("click", () => {
@@ -237,4 +243,7 @@ document.addEventListener("DOMContentLoaded", () => {
       select.classList.remove("open");
     }
   });
+
+  // Update texts immediately
+  languageUtils.updateTexts();
 });
