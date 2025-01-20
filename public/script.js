@@ -5,12 +5,32 @@ import { requestState } from "./stateUtils.js";
 import { languageUtils } from "./languageUtils.js";
 
 window.handleLanguageChange = function (lang) {
+  // Show loading animation
+  const loadingOverlay = document.createElement("div");
+  loadingOverlay.className = "page-reload";
+  loadingOverlay.innerHTML = '<div class="reload-spinner"></div>';
+  document.body.appendChild(loadingOverlay);
+
+  // Trigger animation
+  setTimeout(() => {
+    loadingOverlay.classList.add("active");
+  }, 0);
+
+  // Set language
   languageUtils.setLanguage(lang);
+
+  // Update UI elements
   updateLanguageButtons();
 
-  // Update the data-value attribute of the select element
-  const languageSelect = document.querySelector(".language-select");
-  languageSelect.setAttribute("data-value", lang);
+  // Close dropdown
+  const select = document.querySelector(".custom-select");
+  select.classList.remove("open");
+
+  // Reload page after animation
+  setTimeout(() => {
+    location.reload();
+  }, 400);
+
 };
 
 function updateLanguageButtons() {
@@ -183,16 +203,20 @@ document.addEventListener("DOMContentLoaded", () => {
   const selectedText = select.querySelector(".selected-text");
   const triggerFlag = trigger.querySelector(".flag-icon");
 
-  // Set initial selected value
+  // Set initial position based on saved language
   const savedLang = localStorage.getItem("preferredLanguage") || "he";
   const initialOption = Array.from(options).find(
     (opt) => opt.dataset.value === savedLang
   );
+
   if (initialOption) {
     selectedText.textContent = initialOption.querySelector("span").textContent;
     triggerFlag.src = initialOption.querySelector(".flag-icon").src;
     triggerFlag.alt = initialOption.querySelector(".flag-icon").alt;
   }
+
+  // Update language switcher position immediately
+  document.documentElement.dir = savedLang === "he" ? "rtl" : "ltr";
 
   // Toggle dropdown
   trigger.addEventListener("click", () => {
@@ -203,16 +227,7 @@ document.addEventListener("DOMContentLoaded", () => {
   options.forEach((option) => {
     option.addEventListener("click", () => {
       const value = option.dataset.value;
-      const text = option.querySelector("span").textContent;
-      const flagSrc = option.querySelector(".flag-icon").src;
-      const flagAlt = option.querySelector(".flag-icon").alt;
-
-      selectedText.textContent = text;
-      triggerFlag.src = flagSrc;
-      triggerFlag.alt = flagAlt;
-
       handleLanguageChange(value);
-      select.classList.remove("open");
     });
   });
 
