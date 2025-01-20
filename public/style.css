@@ -451,7 +451,7 @@ footer {
 /* Mobile Responsive - Updated */
 @media screen and (max-width: 768px) {
   .language-switcher {
-    position: relative;
+    position: static;
     top: 0;
     right: 0 !important;
     left: 0 !important;
