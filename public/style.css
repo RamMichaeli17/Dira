@@ -303,138 +303,99 @@ footer {
   left: 20px;
 }
 
-.language-select {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  padding: 10px 45px;
-  width: 150px;
-  height: 44px;
+.custom-select {
+  position: relative;
+  width: 180px;
+  user-select: none;
+}
+
+.select-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: white;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  background-color: white;
-  color: #4a5568;
-  font-family: "Rubik", sans-serif;
-  font-size: 15px;
-  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  text-align: center;
-  background-repeat: no-repeat;
-  background-size: 24px, 12px; /* Increased flag size */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-/* Arrow icon positioning and styling */
-.language-select::after {
-  content: "";
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  border: solid #424242;
-  border-width: 0 2px 2px 0;
-  pointer-events: none;
-}
-
-[dir="ltr"] .language-select::after {
-  right: 15px;
-  transform: translateY(-50%) rotate(45deg);
-}
-
-[dir="rtl"] .language-select::after {
-  left: 15px;
-  transform: translateY(-50%) rotate(-135deg);
-}
-
-/* Dropdown styling */
-.language-select option {
-  padding: 12px 45px;
-  text-align: center;
-  min-height: 44px;
-  background-repeat: no-repeat !important;
-  background-position: 15px center !important;
-  background-size: 24px !important; /* Increased flag size */
-}
-
-/* Hebrew option with flag */
-.language-select option[value="he"] {
-  background: #fff url("israel-flag.png") no-repeat 15px center;
-  background-size: 24px !important;
-}
-
-/* English option with flag */
-.language-select option[value="en"] {
-  background: #fff url("usa-flag.png") no-repeat 15px center;
-  background-size: 24px !important;
-}
-
-/* LTR Support */
-[dir="ltr"] .language-select {
-  padding: 10px 45px;
-  background-position: left 15px center, right 15px center;
-}
-
-[dir="ltr"] .language-select[data-value="he"] {
-  background-image: url("israel-flag.png"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23424242' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-}
-
-[dir="ltr"] .language-select[data-value="en"] {
-  background-image: url("usa-flag.png"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23424242' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-}
-
-/* RTL Support */
-[dir="rtl"] .language-select {
-  padding: 10px 45px;
-  background-position: right 15px center, left 15px center;
-}
-
-[dir="rtl"] .language-select[data-value="he"] {
-  background-image: url("israel-flag.png"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23424242' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-}
-
-[dir="rtl"] .language-select[data-value="en"] {
-  background-image: url("usa-flag.png"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23424242' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-}
-
-/* Custom styling for the select when opened */
-.language-select:focus {
-  outline: none;
-  border-color: #2d89ef;
-  box-shadow: 0 0 0 3px rgba(45, 137, 239, 0.2);
-}
-
-/* Hover effect */
-.language-select:hover {
+.select-trigger:hover {
   border-color: #2d89ef;
   background-color: #f8f9fa;
 }
 
-/* Override default option styling */
-.language-select option:checked,
-.language-select option:hover {
-  background-color: #f7fafc;
-  color: #2d89ef;
-  text-align: center !important;
+.flag-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: cover;
 }
 
-/* Firefox specific styles */
-@-moz-document url-prefix() {
-  .language-select {
-    text-align: center;
-    text-indent: 0;
-  }
-
-  .language-select option {
-    text-align: center;
-    padding: 12px 45px;
-  }
+.arrow {
+  margin-left: auto;
+  width: 10px;
+  height: 10px;
+  border: solid #424242;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
 }
 
-/* Mobile Responsive Styles */
+.custom-select.open .arrow {
+  transform: rotate(-135deg);
+}
+
+.select-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 8px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.2s ease;
+}
+
+.custom-select.open .select-dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.select-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.select-option:first-child {
+  border-radius: 8px 8px 0 0;
+}
+
+.select-option:last-child {
+  border-radius: 0 0 8px 8px;
+}
+
+.select-option:hover {
+  background-color: #f8f9fa;
+}
+
+/* RTL Support */
+[dir="rtl"] .arrow {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+/* Mobile Responsive */
 @media screen and (max-width: 768px) {
   .language-switcher {
     position: relative;
@@ -445,33 +406,19 @@ footer {
     width: fit-content;
   }
 
-  .language-select {
-    width: 140px;
-    height: 40px;
-    font-size: 14px;
-  }
-
-  /* Adjust container padding for mobile */
   .container {
     padding-top: 60px;
-  }
-
-  /* Ensure dropdown is centered on mobile */
-  .language-select option {
-    text-align: center !important;
-    padding: 10px 45px;
   }
 }
 
 /* Webkit browsers custom styling */
 @media screen and (-webkit-min-device-pixel-ratio: 0) {
-  .language-select {
+  .select-trigger {
     border-radius: 8px;
   }
 
-  .language-select option {
+  .select-option {
     border-radius: 0;
-    text-align: center !important;
   }
 }
 

@@ -177,10 +177,49 @@ document.getElementById("projectInput").addEventListener("keydown", (event) => {
 
 // הוסף בסוף ה-DOMContentLoaded event:
 document.addEventListener("DOMContentLoaded", () => {
-  // Initialize language from localStorage or default
+  const select = document.querySelector(".custom-select");
+  const trigger = select.querySelector(".select-trigger");
+  const options = select.querySelectorAll(".select-option");
+  const selectedText = select.querySelector(".selected-text");
+  const triggerFlag = trigger.querySelector(".flag-icon");
+
+  // Set initial selected value
   const savedLang = localStorage.getItem("preferredLanguage") || "he";
-  const languageSelect = document.querySelector(".language-select");
-  languageSelect.value = savedLang;
-  languageSelect.setAttribute("data-value", savedLang);
-  languageUtils.setLanguage(savedLang);
+  const initialOption = Array.from(options).find(
+    (opt) => opt.dataset.value === savedLang
+  );
+  if (initialOption) {
+    selectedText.textContent = initialOption.querySelector("span").textContent;
+    triggerFlag.src = initialOption.querySelector(".flag-icon").src;
+    triggerFlag.alt = initialOption.querySelector(".flag-icon").alt;
+  }
+
+  // Toggle dropdown
+  trigger.addEventListener("click", () => {
+    select.classList.toggle("open");
+  });
+
+  // Handle option selection
+  options.forEach((option) => {
+    option.addEventListener("click", () => {
+      const value = option.dataset.value;
+      const text = option.querySelector("span").textContent;
+      const flagSrc = option.querySelector(".flag-icon").src;
+      const flagAlt = option.querySelector(".flag-icon").alt;
+
+      selectedText.textContent = text;
+      triggerFlag.src = flagSrc;
+      triggerFlag.alt = flagAlt;
+
+      handleLanguageChange(value);
+      select.classList.remove("open");
+    });
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener("click", (e) => {
+    if (!select.contains(e.target)) {
+      select.classList.remove("open");
+    }
+  });
 });
