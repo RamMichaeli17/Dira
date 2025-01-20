@@ -64,14 +64,12 @@ const startConversion = async () => {
 
   // Input validation
   if (!projectInput) {
-    uiUtils.showError("Please enter a project URL or number");
+    uiUtils.showError("projectRequired");
     return;
   }
 
   if (!validateInput(projectInput)) {
-    uiUtils.showError(
-      "Invalid input. Please enter a 3-5 digit number or a valid dira.moch.gov.il URL."
-    );
+    uiUtils.showError("invalidInput");
     return;
   }
 
@@ -106,11 +104,11 @@ const startConversion = async () => {
   } catch (error) {
     if (!abortController.signal.aborted) {
       console.log(error);
-      uiUtils.showError("An error occurred while processing your request");
+      uiUtils.showError("processingError");
     }
   } finally {
     if (abortController.signal.aborted) {
-      uiUtils.showError("Request canceled");
+      uiUtils.showError("requestCanceled");
     }
     uiUtils.hideLoading();
     buttonUtils.updateButtonStates(false);

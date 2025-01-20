@@ -27,25 +27,69 @@ export const uiUtils = {
   },
 
   /**
-   * Show error message
-   * @param {string} message Error message to display
+   * Show error message with animation
+   * @param {string} messageKey Key for the error message in translations
    */
-  showError: (message) => {
+  showError: (messageKey) => {
     const outputDiv = document.getElementById("output");
-    outputDiv.innerHTML = `<div class="error-message">${message}</div>`;
+    const currentLang = languageUtils.getCurrentLanguage();
+
+    // Get translated error message
+    let errorMessage = messageKey;
+    if (translations[currentLang]?.errorMessages?.[messageKey]) {
+      errorMessage = translations[currentLang].errorMessages[messageKey];
+    }
+
+    // Remove any existing error first
+    const existingError = outputDiv.querySelector(".error-container");
+    if (existingError) {
+      existingError.querySelector(".error-message").classList.add("slide-out");
+      setTimeout(() => existingError.remove(), 300);
+    }
+
+    // Create new error message
+    const errorContainer = document.createElement("div");
+    errorContainer.className = "error-container";
+    errorContainer.innerHTML = `<div class="error-message">${errorMessage}</div>`;
+
+    outputDiv.innerHTML = "";
+    outputDiv.appendChild(errorContainer);
     outputDiv.style.display = "block";
-    // Hide other elements when showing error
+
+    // Hide other elements
     document.getElementById("mapPreview").style.display = "none";
     document.getElementById("googleMapPreview").style.display = "none";
     document.getElementById("queueStatus").style.display = "none";
+
+    // Auto-hide error after 5 seconds
+    setTimeout(() => {
+      const currentError = outputDiv.querySelector(".error-message");
+      if (currentError) {
+        currentError.classList.add("slide-out");
+        setTimeout(() => {
+          const container = outputDiv.querySelector(".error-container");
+          if (container) {
+            container.remove();
+          }
+        }, 300);
+      }
+    }, 5000);
   },
 
   /**
-   * Hide error message
+   * Hide error message with animation
    */
   hideError: () => {
     const outputDiv = document.getElementById("output");
-    outputDiv.innerHTML = "";
+    const errorContainer = outputDiv.querySelector(".error-container");
+
+    if (errorContainer) {
+      const errorMessage = errorContainer.querySelector(".error-message");
+      errorMessage.classList.add("slide-out");
+      setTimeout(() => {
+        errorContainer.remove();
+      }, 300);
+    }
   },
 
   /**
