@@ -112,18 +112,16 @@ export const uiUtils = {
     document.getElementById("queueStatus").style.display = "none";
 
     const outputDiv = document.getElementById("output");
-    const govMapPreviewDiv = document.getElementById("mapPreview");
-    const googleMapPreviewDiv = document.getElementById("googleMapPreview");
-    const govMapFrame = document.getElementById("govMapFrame");
-    const googleMapFrame = document.getElementById("googleMapFrame");
-
-    // Reset all map displays
-    govMapPreviewDiv.style.display = "none";
-    googleMapPreviewDiv.style.display = "none";
-
+    const govMapSection = document.getElementById("mapPreview");
+    const googleMapSection = document.getElementById("googleMapPreview");
     const currentLang = languageUtils.getCurrentLanguage();
     const labels = translations[currentLang].mapLabels;
     const errorMessages = translations[currentLang].errorMessages;
+
+    // Reset all sections
+    outputDiv.innerHTML = "";
+    govMapSection.style.display = "none";
+    googleMapSection.style.display = "none";
 
     if (data.error) {
       outputDiv.innerHTML = `<div class="error-message">${errorMessages.processingError}</div>`;
@@ -135,43 +133,45 @@ export const uiUtils = {
       const langParam = currentLang === "he" ? "iw" : "en";
       const googleMapsUrl = `${data.googleMapsUrl}&hl=${langParam}`;
 
-      outputDiv.innerHTML = `
-        <p dir="${currentLang === "he" ? "rtl" : "ltr"}">
-          <strong>${labels.updatedUrl}</strong>
-          <br>
-          <a href="${data.updatedUrl}" target="_blank">${data.updatedUrl}</a>
-        </p>
-        <p dir="${currentLang === "he" ? "rtl" : "ltr"}">
-          <strong>${labels.googleMaps}</strong>
-          <br>
-          <a href="${googleMapsUrl}" target="_blank">${googleMapsUrl}</a>
-        </p>
-      `;
+      // Update GovMap section
+      govMapSection.querySelector("strong").textContent = labels.updatedUrl;
+      const govMapLink = govMapSection.querySelector(".map-link");
+      govMapLink.href = data.updatedUrl;
+      govMapLink.textContent = data.updatedUrl;
 
-      // Handle GovMap iframe
       if (data.govMapIframeUrl) {
+        const govMapFrame = document.getElementById("govMapFrame");
+        govMapFrame.src = data.govMapIframeUrl;
+        govMapFrame.onload = () => {
+          govMapSection.style.display = "block";
+        };
         govMapFrame.onerror = () => {
           console.error("Failed to load GovMap iframe");
-          govMapPreviewDiv.style.display = "none";
         };
-        govMapFrame.onload = () => {
-          govMapPreviewDiv.style.display = "block";
-        };
-        govMapFrame.src = data.govMapIframeUrl;
       }
 
-      // Handle Google Maps iframe
+      // Update Google Maps section
+      googleMapSection.querySelector("strong").textContent = labels.googleMaps;
+      const googleMapLink = googleMapSection.querySelector(".map-link");
+      googleMapLink.href = googleMapsUrl;
+      googleMapLink.textContent = googleMapsUrl;
+
       if (data.googleMapsIframeUrl) {
+        const googleMapFrame = document.getElementById("googleMapFrame");
         const googleMapsIframeUrl = `${data.googleMapsIframeUrl}&hl=${langParam}&zoom=15&output=embed`;
+        googleMapFrame.src = googleMapsIframeUrl;
+        googleMapFrame.onload = () => {
+          googleMapSection.style.display = "block";
+        };
         googleMapFrame.onerror = () => {
           console.error("Failed to load Google Maps iframe");
-          googleMapPreviewDiv.style.display = "none";
         };
-        googleMapFrame.onload = () => {
-          googleMapPreviewDiv.style.display = "block";
-        };
-        googleMapFrame.src = googleMapsIframeUrl;
       }
+
+      // Set RTL/LTR direction
+      const direction = currentLang === "he" ? "rtl" : "ltr";
+      govMapSection.querySelector(".map-heading").dir = direction;
+      googleMapSection.querySelector(".map-heading").dir = direction;
     } else {
       outputDiv.innerHTML = `<div class="error-message">${errorMessages.processingError}</div>`;
     }
