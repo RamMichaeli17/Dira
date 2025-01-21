@@ -3,6 +3,7 @@
 import { uiUtils, buttonUtils } from "./utils.js";
 import { requestState } from "./stateUtils.js";
 import { languageUtils } from "./languageUtils.js";
+import { translations } from "./translations.js";
 
 window.handleLanguageChange = function (lang) {
   // Show loading animation
@@ -159,9 +160,12 @@ const cancelConversion = async () => {
       });
 
       if (response.ok) {
+        const currentLang = languageUtils.getCurrentLanguage();
         // Only clear request ID after successful cancellation
         requestState.clearCurrentRequestId();
-        document.getElementById("output").innerHTML = "<p>Request canceled</p>";
+        document.getElementById(
+          "output"
+        ).innerHTML = `<p>${translations[currentLang].errorMessages["requestCanceled"]}</p>`;
 
         // Start cooldown after successful cancellation
         buttonUtils.startCooldown();
