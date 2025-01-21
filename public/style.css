@@ -259,15 +259,17 @@ footer {
   color: #991b1b;
   border: 1px solid #fecaca;
   border-radius: 8px;
-  padding: 12px 16px;
+  padding: 16px;
   font-size: 14px;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: center; /* Changed back to center */
+  justify-content: center; /* Added to center content */
   gap: 12px;
-  text-align: center;
+  text-align: center; /* Changed back to center */
   position: relative;
-  overflow: hidden;
+  line-height: 1.5;
+  max-width: 100%;
+  word-wrap: break-word;
 }
 
 .error-message::before {
@@ -277,18 +279,14 @@ footer {
   justify-content: center;
   background-color: #991b1b;
   color: white;
-  width: 20px;
+  min-width: 20px;
   height: 20px;
   border-radius: 50%;
   font-size: 14px;
   font-weight: bold;
+  flex-shrink: 0;
 }
 
-.error-message.slide-out {
-  animation: slideUp 0.3s ease forwards;
-}
-
-/* Error animations */
 @keyframes slideDown {
   from {
     opacity: 0;
@@ -298,26 +296,21 @@ footer {
   to {
     opacity: 1;
     transform: translateY(0);
-    max-height: 100px;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-    max-height: 100px;
-  }
-  to {
-    opacity: 0;
-    transform: translateY(-20px);
-    max-height: 0;
+    max-height: 200px;
   }
 }
 
 /* RTL Support for error messages */
 [dir="rtl"] .error-message {
   flex-direction: row-reverse;
+}
+
+/* Ensure error message text doesn't overflow container on mobile */
+@media screen and (max-width: 768px) {
+  .error-message {
+    padding: 12px;
+    font-size: 13px;
+  }
 }
 
 @keyframes cooldown {

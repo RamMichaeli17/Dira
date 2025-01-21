@@ -40,11 +40,10 @@ export const uiUtils = {
       errorMessage = translations[currentLang].errorMessages[messageKey];
     }
 
-    // Remove any existing error first
+    // Remove any existing error immediately without animation
     const existingError = outputDiv.querySelector(".error-container");
     if (existingError) {
-      existingError.querySelector(".error-message").classList.add("slide-out");
-      setTimeout(() => existingError.remove(), 300);
+      existingError.remove();
     }
 
     // Create new error message
@@ -60,35 +59,17 @@ export const uiUtils = {
     document.getElementById("mapPreview").style.display = "none";
     document.getElementById("googleMapPreview").style.display = "none";
     document.getElementById("queueStatus").style.display = "none";
-
-    // Auto-hide error after 5 seconds
-    setTimeout(() => {
-      const currentError = outputDiv.querySelector(".error-message");
-      if (currentError) {
-        currentError.classList.add("slide-out");
-        setTimeout(() => {
-          const container = outputDiv.querySelector(".error-container");
-          if (container) {
-            container.remove();
-          }
-        }, 300);
-      }
-    }, 5000);
   },
 
   /**
-   * Hide error message with animation
+   * Hide error message without animation
    */
   hideError: () => {
     const outputDiv = document.getElementById("output");
     const errorContainer = outputDiv.querySelector(".error-container");
 
     if (errorContainer) {
-      const errorMessage = errorContainer.querySelector(".error-message");
-      errorMessage.classList.add("slide-out");
-      setTimeout(() => {
-        errorContainer.remove();
-      }, 300);
+      errorContainer.remove();
     }
   },
 
