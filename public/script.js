@@ -189,8 +189,11 @@ document.getElementById("cancelButton").addEventListener("click", async () => {
 
 document.getElementById("projectInput").addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
-    startConversion();
-    updateQueueStatus();
+    const convertButton = document.getElementById("convertButton");
+    if (!convertButton.disabled) {
+      startConversion();
+      updateQueueStatus();
+    }
   }
 });
 

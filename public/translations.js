@@ -1,9 +1,9 @@
-// public/translations.js
 export const translations = {
   en: {
     title: "Project Link Converter",
     inputLabel: "Enter a project URL or number below:",
-    inputPlaceholder: "Enter project URL or number...",
+    inputPlaceholder:
+      "Example: https://www.dira.moch.gov.il/27960/130/ProjectInfo",
     convertButton: "Convert",
     cancelButton: "Cancel",
     processingText: "Processing...",
@@ -26,7 +26,8 @@ export const translations = {
   he: {
     title: "ממיר קישורי פרויקט",
     inputLabel: "הזן מספר או כתובת URL של פרויקט למטה:",
-    inputPlaceholder: "...הזן כתובת URL או מספר פרויקט",
+    inputPlaceholder:
+      "https://www.dira.moch.gov.il/27960/130/ProjectInfo :לדוגמה",
     convertButton: "המר",
     cancelButton: "בטל",
     processingText: "...מעבד",
