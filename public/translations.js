@@ -27,10 +27,10 @@ export const translations = {
     title: "ממיר קישורי פרויקט",
     inputLabel: "הזן מספר או כתובת URL של פרויקט למטה:",
     inputPlaceholder:
-      "https://www.dira.moch.gov.il/27960/130/ProjectInfo :לדוגמה",
+      "לדוגמה: https://www.dira.moch.gov.il/27960/130/ProjectInfo",
     convertButton: "המר",
     cancelButton: "בטל",
-    processingText: "...מעבד",
+    processingText: "מעבד...",
     queuePosition: "מיקומך בתור",
     estimatedWait: "זמן המתנה משוער:",
     totalRequests: "סך הבקשות בתור:",
