@@ -10,6 +10,7 @@ export const translations = {
     queuePosition: "Your position in queue",
     estimatedWait: "Estimated wait time:",
     totalRequests: "Total requests in queue:",
+    loadingMap: "Loading map...",
     errorMessages: {
       invalidInput:
         "Invalid input. Please enter a 3-5 digit number or a valid dira.moch.gov.il URL.",
@@ -34,6 +35,7 @@ export const translations = {
     queuePosition: "מיקומך בתור",
     estimatedWait: "זמן המתנה משוער:",
     totalRequests: "סך הבקשות בתור:",
+    loadingMap: "טוען מפה...",
     errorMessages: {
       invalidInput:
         "קלט לא חוקי. אנא הזן מספר בן 3-5 ספרות או כתובת URL חוקית של dira.moch.gov.il.",

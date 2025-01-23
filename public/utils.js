@@ -105,6 +105,66 @@ export const uiUtils = {
   },
 
   /**
+   * Add loading placeholder for iframes
+   * @param {HTMLElement} mapSection
+   * @param {HTMLIFrameElement} iframe
+   * @param {string} src
+   */
+  addIframeLoadingPlaceholder: (mapSection, iframe, src) => {
+    const currentLang = languageUtils.getCurrentLanguage();
+    // Create loading overlay
+    const loadingOverlay = document.createElement("div");
+    loadingOverlay.className = "iframe-loading-overlay";
+    loadingOverlay.innerHTML = `
+      <div class="iframe-spinner">
+        <div class="spinner"></div>
+        <p>${translations[currentLang].loadingMap}</p>
+      </div>
+    `;
+
+    // Style the overlay
+    loadingOverlay.style.cssText = `
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    `;
+
+    // Insert loading overlay
+    const mapContainer = mapSection.querySelector(".map-container");
+    mapContainer.style.position = "relative";
+    mapContainer.appendChild(loadingOverlay);
+
+    // Reset iframe
+    iframe.src = "";
+    iframe.style.opacity = "0";
+
+    // Load iframe with events
+    iframe.onload = () => {
+      iframe.style.opacity = "1";
+      loadingOverlay.remove();
+    };
+    iframe.onerror = () => {
+      loadingOverlay.innerHTML = `
+        <div class="iframe-error">
+          <p>Failed to load map</p>
+        </div>
+      `;
+      console.error("Failed to load map iframe");
+    };
+
+    // Set source after setting up event handlers
+    iframe.src = src;
+    mapSection.style.display = "block";
+  },
+
+  /**
    * Display results
    */
   displayResults: (data) => {
@@ -139,33 +199,26 @@ export const uiUtils = {
       govMapLink.href = data.updatedUrl;
       govMapLink.textContent = data.updatedUrl;
 
+      const govMapFrame = document.getElementById("govMapFrame");
+      const googleMapFrame = document.getElementById("googleMapFrame");
+
+      // Add loading placeholder for GovMap
       if (data.govMapIframeUrl) {
-        const govMapFrame = document.getElementById("govMapFrame");
-        govMapFrame.src = data.govMapIframeUrl;
-        govMapFrame.onload = () => {
-          govMapSection.style.display = "block";
-        };
-        govMapFrame.onerror = () => {
-          console.error("Failed to load GovMap iframe");
-        };
+        uiUtils.addIframeLoadingPlaceholder(
+          govMapSection,
+          govMapFrame,
+          data.govMapIframeUrl
+        );
       }
 
-      // Update Google Maps section
-      googleMapSection.querySelector("strong").textContent = labels.googleMaps;
-      const googleMapLink = googleMapSection.querySelector(".map-link");
-      googleMapLink.href = googleMapsUrl;
-      googleMapLink.textContent = googleMapsUrl;
-
+      // Add loading placeholder for Google Maps
       if (data.googleMapsIframeUrl) {
-        const googleMapFrame = document.getElementById("googleMapFrame");
         const googleMapsIframeUrl = `${data.googleMapsIframeUrl}&hl=${langParam}&zoom=15&output=embed`;
-        googleMapFrame.src = googleMapsIframeUrl;
-        googleMapFrame.onload = () => {
-          googleMapSection.style.display = "block";
-        };
-        googleMapFrame.onerror = () => {
-          console.error("Failed to load Google Maps iframe");
-        };
+        uiUtils.addIframeLoadingPlaceholder(
+          googleMapSection,
+          googleMapFrame,
+          googleMapsIframeUrl
+        );
       }
 
       // Set RTL/LTR direction
