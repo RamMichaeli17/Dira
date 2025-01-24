@@ -212,6 +212,11 @@ export const uiUtils = {
       }
 
       // Add loading placeholder for Google Maps
+      googleMapSection.querySelector("strong").textContent = labels.googleMaps;
+      const googleMapLink = googleMapSection.querySelector(".map-link");
+      googleMapLink.href = googleMapsUrl;
+      googleMapLink.textContent = googleMapsUrl;
+
       if (data.googleMapsIframeUrl) {
         const googleMapsIframeUrl = `${data.googleMapsIframeUrl}&hl=${langParam}&zoom=15&output=embed`;
         uiUtils.addIframeLoadingPlaceholder(
