@@ -78,6 +78,7 @@ export const uiUtils = {
    * Update queue display
    */
   updateQueueDisplay: (queueLength, isFirstInQueue) => {
+    const currentLang = languageUtils.getCurrentLanguage();
     const queueStatusDiv = document.getElementById("queueStatus");
     const loadingDiv = document.getElementById("loading");
 
@@ -93,7 +94,7 @@ export const uiUtils = {
       } else {
         // Show queue status for others
         queueStatusDiv.innerHTML = `
-          <div class="queue-message">Your request is in queue</div>
+          <div class="queue-message">${translations[currentLang].requestInQueue}</div>
           <div class="queue-dots">
             <div class="dot"></div>
             <div class="dot"></div>
