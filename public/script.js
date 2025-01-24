@@ -6,7 +6,18 @@ import { languageUtils } from "./languageUtils.js";
 import { translations } from "./translations.js";
 
 window.handleLanguageChange = function (lang) {
-  // Show loading animation
+  const currentLang = languageUtils.getCurrentLanguage();
+  if (lang === currentLang) {
+    const select = document.querySelector(".custom-select");
+    select.classList.remove("open");
+    return;
+  }
+
+  // Prevent multiple page reloads/animations
+  if (document.body.classList.contains("language-changing")) return;
+
+  document.body.classList.add("language-changing");
+
   const loadingOverlay = document.createElement("div");
   loadingOverlay.className = "page-reload";
   loadingOverlay.innerHTML = '<div class="reload-spinner"></div>';
@@ -197,8 +208,23 @@ document.getElementById("projectInput").addEventListener("keydown", (event) => {
   }
 });
 
-// הוסף בסוף ה-DOMContentLoaded event:
 document.addEventListener("DOMContentLoaded", () => {
+  // Add loaded class to body to show content
+  document.body.classList.add("loaded");
+
+  // Only create and remove loading overlay once
+  const initialLoadOverlay = document.createElement("div");
+  initialLoadOverlay.className = "page-reload initial-load active";
+  initialLoadOverlay.innerHTML = '<div class="reload-spinner"></div>';
+  document.body.appendChild(initialLoadOverlay);
+
+  setTimeout(() => {
+    initialLoadOverlay.classList.remove("active");
+    setTimeout(() => {
+      initialLoadOverlay.remove();
+    }, 300);
+  }, 500);
+
   const select = document.querySelector(".custom-select");
   const trigger = select.querySelector(".select-trigger");
   const options = select.querySelectorAll(".select-option");

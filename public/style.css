@@ -7,6 +7,14 @@ body {
   padding: 0;
   background: #f4f7f9;
   color: #333;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s;
+}
+
+body.loaded {
+  opacity: 1;
+  visibility: visible;
 }
 
 /* Centering Content */
@@ -576,4 +584,15 @@ footer {
   border: none;
   margin: 0;
   padding: 0;
+}
+
+.page-reload.initial-load {
+  background: rgba(255, 255, 255, 1);
+  z-index: 9999;
+  transition: opacity 0.3s ease, visibility 0.3s;
+}
+
+.page-reload.initial-load:not(.active) {
+  opacity: 0;
+  visibility: hidden;
 }
