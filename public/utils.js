@@ -59,6 +59,7 @@ export const uiUtils = {
     document.getElementById("mapPreview").style.display = "none";
     document.getElementById("googleMapPreview").style.display = "none";
     document.getElementById("queueStatus").style.display = "none";
+    document.querySelector("footer").style.position = "absolute";
   },
 
   /**
@@ -219,6 +220,7 @@ export const uiUtils = {
 
       if (data.googleMapsIframeUrl) {
         const googleMapsIframeUrl = `${data.googleMapsIframeUrl}&hl=${langParam}&zoom=15&output=embed`;
+        document.querySelector("footer").style.position = "relative";
         uiUtils.addIframeLoadingPlaceholder(
           googleMapSection,
           googleMapFrame,
