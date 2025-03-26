@@ -147,4 +147,13 @@ router.get("/queue-status", (req, res) => {
   });
 });
 
+/**
+ * Keep-alive route for UptimeRobot
+ * GET /keep-alive
+ */
+router.get("/keep-alive", (req, res) => {
+  console.log(`[KEEP-ALIVE] Ping received at ${new Date().toISOString()}`);
+  res.status(200).send("OK");
+});
+
 module.exports = router;
