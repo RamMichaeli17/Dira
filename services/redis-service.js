@@ -48,12 +48,7 @@ class RedisService {
    */
   async setProjectData(projectNumber, data, ttl = 604800) {
     try {
-      await this.client.set(
-        projectNumber,
-        JSON.stringify(data),
-        "EX",
-        ttl
-      );
+      await this.client.set(projectNumber, JSON.stringify(data), "EX", ttl);
     } catch (error) {
       console.error("Redis set error:", error);
     }

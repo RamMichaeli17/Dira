@@ -72,16 +72,27 @@ class GovMapService {
           throw new Error("Request was canceled");
         }
 
+        await page.waitForFunction(
+          (url) => location.href !== url,
+          { timeout: 10000 },
+          baseUrl
+        );
+
         const finalUrl = page.url();
         console.log("GovMap redirected URL:", finalUrl);
 
-        if (finalUrl.includes("C")) {
-          const coords = finalUrl.split("C")[1]?.split(",");
-          if (coords?.length === 2) {
-            const [x, y] = coords.map(parseFloat);
-            if (!isNaN(x) && !isNaN(y)) {
-              console.log("Extracted coordinates:", { itmX: x, itmY: y });
-              return { x, y };
+        if (finalUrl.includes("c")) {
+          const url = new URL(finalUrl);
+          const cParam = url.searchParams.get("c");
+
+          if (cParam) {
+            const coords = cParam.split(",");
+            if (coords.length === 2) {
+              const [x, y] = coords.map(parseFloat);
+              if (!isNaN(x) && !isNaN(y)) {
+                console.log("Extracted coordinates:", { itmX: x, itmY: y });
+                return { x, y };
+              }
             }
           }
         }
