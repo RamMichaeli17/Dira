@@ -5,7 +5,6 @@ const path = require("path");
 require("dotenv").config();
 
 // Import services and routes
-const browserService = require("./services/browser-service");
 const conversionRoutes = require("./routes/conversion-routes");
 const redisService = require("./services/redis-service");
 
@@ -25,7 +24,7 @@ app.use("/", conversionRoutes);
  */
 process.on("SIGINT", async () => {
   console.log("\nInitiating graceful shutdown...");
-  await Promise.all([browserService.close(), redisService.close()]);
+  await redisService.close();
   console.log("Server shutdown complete");
   process.exit(0);
 });
@@ -34,22 +33,17 @@ process.on("unhandledRejection", (reason, promise) => {
   console.error("Unhandled Rejection at:", promise, "reason:", reason);
 });
 
-process.on("uncaughtException", (error) => {
+process.on("uncaughtException", async (error) => {
   console.error("Uncaught Exception:", error);
-  Promise.all([browserService.close(), redisService.close()])
-    .then(() => process.exit(1))
-    .catch(() => process.exit(1));
+  await redisService.close();
+  process.exit(1);
 });
 
 /**
- * Initialize server and browser service
+ * Initialize server
  */
 (async () => {
   try {
-    // Initialize browser service first
-    await browserService.initialize();
-    console.log("Browser service initialized successfully");
-
     // Start server
     app.listen(PORT, () => {
       console.log(`Server is running on http://localhost:${PORT}`);

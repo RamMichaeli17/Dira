@@ -14,7 +14,7 @@ class ProjectDetailsService {
 
     // Handle 3 or 4 digit lottery numbers
     if (/^\d{3,4}$/.test(projectInput)) {
-      return this.findProjectByLottery(projectInput);
+      return await this.findProjectByLottery(projectInput);
     }
 
     // Handle 5 digit project numbers
@@ -31,10 +31,12 @@ class ProjectDetailsService {
   }
 
   async findProjectByLottery(lotteryNumber) {
-    const page = await browserService.mainPage;
-    await page.reload();
+    const page = await browserService.createNewPage();
+    await page.goto("https://www.dira.moch.gov.il/ProjectsList", {
+      waitUntil: "networkidle2",
+      timeout: 60000,
+    });
 
-    // Input lottery number
     const inputSelector = "#lotteryNumber";
     await page.waitForSelector(inputSelector);
     await page.type(inputSelector, lotteryNumber);
@@ -84,12 +86,20 @@ class ProjectDetailsService {
         }
       }, detailsText);
     } catch (error) {
+      await page.close();
+      if (page._browserInstance) {
+        await page._browserInstance.close();
+      }
       throw new Error(`No project found for lottery number: ${lotteryNumber}`);
     }
 
-    // Get the URL after clicking details
     const currentURL = page.url();
     const matches = currentURL.match(/\/(\d{2,5})\/(\d{3,4})\/ProjectInfo/);
+
+    await page.close();
+    if (page._browserInstance) {
+      await page._browserInstance.close();
+    }
 
     if (!matches) {
       throw new Error("Failed to extract project number from URL");

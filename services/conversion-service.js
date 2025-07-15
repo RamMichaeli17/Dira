@@ -44,9 +44,7 @@ class ConversionService {
       newPage = await browserService.createNewPage();
 
       if (signal?.aborted) {
-        if (newPage && !newPage.isClosed()) {
-          await newPage.close();
-        }
+        await this.cleanup(newPage);
         throw new Error("Request canceled");
       }
 
@@ -57,6 +55,7 @@ class ConversionService {
       );
 
       if (signal?.aborted) {
+        await this.cleanup(newPage);
         throw new Error("Request canceled");
       }
 
@@ -68,28 +67,28 @@ class ConversionService {
       console.log(`Cached data for project ${projectInput}`);
 
       // Cleanup
-      if (newPage && !newPage.isClosed()) {
-        await newPage.close();
-      }
-      await browserService.resetMainPage();
+      await this.cleanup(newPage);
 
       const endTime = Date.now();
-      const duration = endTime - startTime;
-      console.log(`Conversion completed in ${duration} ms.`);
+      console.log(`Conversion completed in ${endTime - startTime} ms.`);
 
       return urls;
     } catch (error) {
       console.error("Error in processProjectInput:", error);
-
-      if (newPage && !newPage.isClosed()) {
-        await newPage.close();
-      }
-      await browserService.resetMainPage();
-
+      await this.cleanup(newPage);
       if (signal?.aborted) {
         throw new Error("Request canceled");
       }
       throw error;
+    }
+  }
+
+  async cleanup(page) {
+    if (page && !page.isClosed()) {
+      await page.close();
+      if (page._browserInstance) {
+        await page._browserInstance.close();
+      }
     }
   }
 }
