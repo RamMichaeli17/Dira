@@ -66,7 +66,7 @@ async function processQueue() {
  * Convert project input route
  * POST /convert
  */
-router.post("/convert", (req, res) => {
+router.post("/convert", async (req, res) => {
   const requestId = req.headers["x-request-id"];
   console.log("Received project input:", req.body.projectInput);
 
@@ -78,11 +78,35 @@ router.post("/convert", (req, res) => {
     });
   }
 
-  const abortController = new AbortController();
-  queueService.add({ req, res, abortController });
+  try {
+    // Check cache first before adding to queue
+    const cacheResult = await conversionService.checkCacheForRequest(
+      req.body.projectInput
+    );
 
-  if (queueService.getLength() === 1) {
-    processQueue();
+    // If data was found in cache, return immediately
+    if (cacheResult.fromCache) {
+      return res.json({
+        ...cacheResult.data,
+        requestId: requestId,
+        success: true,
+      });
+    }
+
+    // If not in cache, add to queue for processing
+    const abortController = new AbortController();
+    queueService.add({ req, res, abortController });
+
+    if (queueService.getLength() === 1) {
+      processQueue();
+    }
+  } catch (error) {
+    console.error("Error in convert route:", error);
+    return res.status(500).json({
+      error: error.message || "An error occurred during processing",
+      requestId: requestId,
+      success: false,
+    });
   }
 });
 

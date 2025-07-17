@@ -9,6 +9,37 @@ const redisService = require("./redis-service");
 
 class ConversionService {
   /**
+   * Handle conversion request - check cache first, then return cache status
+   * @param {string} projectInput - Project input to process
+   * @returns {Promise<{data: Object|null, fromCache: boolean}>} Cache result
+   */
+  async checkCacheForRequest(projectInput) {
+    try {
+      // Check cache first
+      const cachedData = await redisService.getProjectData(projectInput);
+      if (cachedData) {
+        console.log(
+          `Cache hit for project ${projectInput} - returning immediately`
+        );
+        return {
+          data: cachedData,
+          fromCache: true,
+        };
+      }
+
+      // If not in cache, return indication to process
+      console.log(`Cache miss for project ${projectInput} - needs processing`);
+      return {
+        data: null,
+        fromCache: false,
+      };
+    } catch (error) {
+      console.error("Error in checkCacheForRequest:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Process project input and return all necessary data
    * @param {string} projectInput - Project input to process
    * @param {AbortSignal} signal - Signal for request cancellation
@@ -23,15 +54,6 @@ class ConversionService {
         throw new Error("Request canceled");
       }
 
-      // Check cache first
-      const cachedData = await redisService.getProjectData(projectInput);
-      if (cachedData) {
-        console.log(`Cache hit for project ${projectInput}`);
-        return cachedData;
-      }
-
-      console.log(`Cache miss for project ${projectInput}, fetching data...`);
-
       // Get project details
       const details = await projectDetailsService.extractProjectDetails(
         projectInput
@@ -40,7 +62,7 @@ class ConversionService {
 
       console.log(`Processing project number: ${projectNumber}`);
 
-      // If not in cache, proceed with browser automation
+      // Create browser page for processing
       newPage = await browserService.createNewPage();
 
       if (signal?.aborted) {

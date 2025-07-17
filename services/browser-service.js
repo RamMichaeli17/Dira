@@ -13,10 +13,15 @@ class BrowserService {
    * @returns {Promise<Page>} New Puppeteer page instance
    */
   async createNewPage() {
+    let browser;
     try {
-      const browser = await puppeteer.connect({
-        browserWSEndpoint: `wss://production-sfo.browserless.io?token=${process.env.BROWSERLESS_TOKEN}`,
-      });
+      if (process.env.USE_BROWSERLESS === "true") {
+        browser = await puppeteer.connect({
+          browserWSEndpoint: `wss://production-sfo.browserless.io?token=${process.env.BROWSERLESS_TOKEN}`,
+        });
+      } else {
+        browser = await puppeteer.launch(puppeteerConfig);
+      }
       const page = await browser.newPage();
       page._browserInstance = browser;
       return page;
