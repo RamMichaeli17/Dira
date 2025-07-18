@@ -80,23 +80,25 @@ router.post("/convert", async (req, res) => {
 
   try {
     // Check cache first before adding to queue
+    const abortController = new AbortController();
+    queueService.add({ req, res, abortController });
+
     const cacheResult = await conversionService.checkCacheForRequest(
       req.body.projectInput
     );
 
     // If data was found in cache, return immediately
     if (cacheResult.fromCache) {
+      queueService.removeById(requestId);
       return res.json({
         ...cacheResult.data,
         requestId: requestId,
         success: true,
+        fromCache: true,
       });
     }
 
     // If not in cache, add to queue for processing
-    const abortController = new AbortController();
-    queueService.add({ req, res, abortController });
-
     if (queueService.getLength() === 1) {
       processQueue();
     }
