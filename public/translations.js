@@ -16,6 +16,7 @@ export const translations = {
       invalidInput:
         "Invalid input. Please enter a 3-5 digit number or a valid dira.moch.gov.il URL.",
       projectRequired: "Please enter a project URL or number",
+      projectNotFound: "No project found for the entered input",
       processingError: "An error occurred while processing your request",
       requestCanceled: "Request canceled",
     },
@@ -42,6 +43,7 @@ export const translations = {
       invalidInput:
         "קלט לא חוקי. אנא הזן מספר בן 3-5 ספרות או כתובת URL חוקית של dira.moch.gov.il.",
       projectRequired: "אנא הזן כתובת URL או מספר של פרויקט",
+      projectNotFound: "לא נמצא פרויקט עבור הקלט שהוזן",
       processingError: "אירעה שגיאה בעיבוד הבקשה שלך",
       requestCanceled: "הבקשה בוטלה",
     },

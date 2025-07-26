@@ -90,7 +90,7 @@ class ProjectDetailsService {
       if (page._browserInstance) {
         await page._browserInstance.close();
       }
-      throw new Error(`No project found for lottery number: ${lotteryNumber}`);
+      throw new Error("projectNotFound");
     }
 
     const currentURL = page.url();
