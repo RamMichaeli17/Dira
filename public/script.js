@@ -190,7 +190,7 @@ const cancelConversion = async () => {
 // Event listeners
 document.getElementById("convertButton").addEventListener("click", () => {
   startConversion();
-  updateQueueStatus();
+  setTimeout(updateQueueStatus, 300);
 });
 
 document.getElementById("cancelButton").addEventListener("click", async () => {
@@ -203,7 +203,7 @@ document.getElementById("projectInput").addEventListener("keydown", (event) => {
     const convertButton = document.getElementById("convertButton");
     if (!convertButton.disabled) {
       startConversion();
-      updateQueueStatus();
+      setTimeout(updateQueueStatus, 300);
     }
   }
 });
