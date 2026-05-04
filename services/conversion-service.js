@@ -1,38 +1,31 @@
 // services/conversion-service.js
 
-const browserService = require("./browser-service");
 const coordinatesService = require("./coordinates-service");
 const govmapService = require("./govmap-service");
 const projectDetailsService = require("./project-details-service");
-const urlService = require("./url-service");
 const redisService = require("./redis-service");
+const browserService = require("./browser-service");
 
+/**
+ * Service responsible for orchestrating the entire conversion flow.
+ * Handles caching, scraping project details, extracting coordinates, and generating URLs.
+ */
 class ConversionService {
   /**
-   * Handle conversion request - check cache first, then return cache status
-   * @param {string} projectInput - Project input to process
-   * @returns {Promise<{data: Object|null, fromCache: boolean}>} Cache result
+   * Checks the Redis cache for existing project data to prevent redundant processing.
+   * @param {string} projectInput - The project number or URL provided by the user.
+   * @returns {Promise<{data: Object|null, fromCache: boolean}>} The cached data if found.
    */
   async checkCacheForRequest(projectInput) {
     try {
-      // Check cache first
       const cachedData = await redisService.getProjectData(projectInput);
       if (cachedData) {
         console.log(
-          `Cache hit for project ${projectInput} - returning immediately`
+          `Cache hit for project ${projectInput} - returning immediately.`,
         );
-        return {
-          data: cachedData,
-          fromCache: true,
-        };
+        return { data: cachedData, fromCache: true };
       }
-
-      // If not in cache, return indication to process
-      console.log(`Cache miss for project ${projectInput} - needs processing`);
-      return {
-        data: null,
-        fromCache: false,
-      };
+      return { data: null, fromCache: false };
     } catch (error) {
       console.error("Error in checkCacheForRequest:", error);
       throw error;
@@ -40,77 +33,60 @@ class ConversionService {
   }
 
   /**
-   * Process project input and return all necessary data
-   * @param {string} projectInput - Project input to process
-   * @param {AbortSignal} signal - Signal for request cancellation
-   * @returns {Promise<Object>} Processing result
+   * Processes the project input through the complete conversion pipeline.
+   * @param {string} projectInput - The project number or URL to process.
+   * @param {AbortSignal} signal - Signal to handle request cancellation.
+   * @returns {Promise<Object>} The generated map URLs.
    */
   async processProjectInput(projectInput, signal) {
     const startTime = Date.now();
-    let newPage = null;
 
     try {
-      if (signal?.aborted) {
-        throw new Error("Request canceled");
-      }
+      if (signal?.aborted) throw new Error("Request canceled");
 
-      // Get project details
-      const details = await projectDetailsService.extractProjectDetails(
-        projectInput
-      );
+      // 1. Extract standard project details (handles both URLs and raw numbers)
+      const details =
+        await projectDetailsService.extractProjectDetails(projectInput);
       const projectNumber = details.projectNumber;
-
       console.log(`Processing project number: ${projectNumber}`);
 
-      // Create browser page for processing
-      newPage = await browserService.createNewPage();
+      // --- RESET THE CLOCK FIX ---
+      // We explicitly close the browser connection here.
+      // This ensures GovMapService gets a fresh 60-second connection window from Browserless!
+      await browserService.close();
 
-      if (signal?.aborted) {
-        await this.cleanup(newPage);
-        throw new Error("Request canceled");
-      }
+      if (signal?.aborted) throw new Error("Request canceled");
 
+      // 2. Extract ITM coordinates from GovMap (creates and manages its own browser tabs)
       const coordinates = await govmapService.getCoordinates(
         projectNumber,
-        newPage,
-        signal
+        signal,
       );
 
-      if (signal?.aborted) {
-        await this.cleanup(newPage);
-        throw new Error("Request canceled");
-      }
+      if (signal?.aborted) throw new Error("Request canceled");
 
-      // Generate URLs from coordinates
+      // 3. Convert coordinates and generate final URLs (GovMap and Google Maps)
       const urls = coordinatesService.generateUrls(projectNumber, coordinates);
 
-      // Cache the results
+      // Cache the successful results to save resources on future requests
       await redisService.setProjectData(projectInput, urls);
       console.log(`Cached data for project ${projectInput}`);
 
-      // Cleanup
-      await this.cleanup(newPage);
+      // --- BROWSERLESS TIMEOUT FIX ---
+      // Reset the connection to guarantee a fresh 60s timeout window for the next user in the queue
+      await browserService.close();
 
       const endTime = Date.now();
       console.log(`Conversion completed in ${endTime - startTime} ms.`);
-
       return urls;
     } catch (error) {
       console.error("Error in processProjectInput:", error);
-      await this.cleanup(newPage);
-      if (signal?.aborted) {
-        throw new Error("Request canceled");
-      }
-      throw error;
-    }
-  }
 
-  async cleanup(page) {
-    if (page && !page.isClosed()) {
-      await page.close();
-      if (page._browserInstance) {
-        await page._browserInstance.close();
-      }
+      // Ensure the browser connection is reset even if an error occurs to prevent deadlocks
+      await browserService.close();
+
+      if (signal?.aborted) throw new Error("Request canceled");
+      throw error;
     }
   }
 }

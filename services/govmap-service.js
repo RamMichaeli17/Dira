@@ -1,29 +1,41 @@
 // services/govmap-service.js
-const queueService = require("./queue-service");
+const browserService = require("./browser-service");
 
+/**
+ * Service for interacting with GovMap to extract project coordinates.
+ */
 class GovMapService {
-  async getCoordinates(projectNumber, page, signal) {
+  constructor() {
+    this.MAX_ATTEMPTS = 3;
+    this.NAVIGATION_TIMEOUT = 45000;
+    this.REDIRECT_TIMEOUT = 30000;
+  }
+
+  /**
+   * Attempts to navigate to GovMap and extract coordinates.
+   * Manages retries, page creation, and request cancellation.
+   * @param {string} projectNumber - The project number to search for.
+   * @param {AbortSignal} signal - Signal to handle request cancellation.
+   * @returns {Promise<{x: number, y: number}>} Extracted ITM coordinates.
+   */
+  async getCoordinates(projectNumber, signal) {
     const baseUrl = `https://www.govmap.gov.il/?lay=Matara_MItham,Matara_Mig&bs=Matara_MItham%7CACTIVEPROJECTID~${projectNumber}`;
     console.log("Generated GovMap URL:", baseUrl);
     console.log("Navigating to GovMap URL...");
 
     let attempts = 0;
-    const maxAttempts = 3;
-    let pageAlreadyClosed = false;
     let abortHandlerCalled = false;
+    let currentPage = null; // Track the active page so the abort handler can close it
 
-    // Enhanced abort handler with guard
     const abortHandler = async () => {
       if (abortHandlerCalled) return;
       abortHandlerCalled = true;
 
       console.log("Navigation aborted");
       try {
-        if (!pageAlreadyClosed && !page.isClosed()) {
-          // Force stop the page loading
-          await page.evaluate(() => window.stop());
-          await page.close();
-          pageAlreadyClosed = true;
+        if (currentPage && !currentPage.isClosed()) {
+          await currentPage.evaluate(() => window.stop());
+          await currentPage.close();
           console.log("Page closed successfully during abort");
         }
       } catch (error) {
@@ -31,85 +43,138 @@ class GovMapService {
       }
     };
 
-    // Set up abort handler
     if (signal) {
       signal.addEventListener("abort", abortHandler, { once: true });
     }
 
-    while (attempts < maxAttempts) {
+    while (attempts < this.MAX_ATTEMPTS) {
       try {
-        // Check if cancelled before navigation
         if (signal?.aborted) {
           await abortHandler();
           throw new Error("Request was canceled");
         }
 
-        // Set a shorter timeout for navigation
-        const navigationPromise = page.goto(baseUrl, {
-          waitUntil: "networkidle2",
-          timeout: 30000, // Reduced timeout
-        });
+        // Create a fresh page for each attempt to ensure a clean state
+        currentPage = await browserService.createNewPage();
 
-        // Race between navigation and abort signal
-        await Promise.race([
-          navigationPromise,
-          new Promise((_, reject) => {
-            if (signal) {
-              signal.addEventListener(
-                "abort",
-                () => {
-                  reject(new Error("Request was canceled during navigation"));
-                },
-                { once: true }
-              );
-            }
-          }),
-        ]);
-
-        // Check if cancelled after navigation
-        if (signal?.aborted) {
-          await abortHandler();
-          throw new Error("Request was canceled");
-        }
-
-        await page.waitForFunction(
-          (url) => location.href !== url,
-          { timeout: 10000 },
-          baseUrl
+        const result = await this._attemptNavigation(
+          currentPage,
+          baseUrl,
+          signal,
+          abortHandler,
         );
 
-        const finalUrl = page.url();
-        console.log("GovMap redirected URL:", finalUrl);
+        // Clean up the page upon success
+        if (currentPage && !currentPage.isClosed()) {
+          await currentPage.close();
+        }
 
-        if (finalUrl.includes("c")) {
-          const url = new URL(finalUrl);
-          const cParam = url.searchParams.get("c");
-
-          if (cParam) {
-            const coords = cParam.split(",");
-            if (coords.length === 2) {
-              const [x, y] = coords.map(parseFloat);
-              if (!isNaN(x) && !isNaN(y)) {
-                console.log("Extracted coordinates:", { itmX: x, itmY: y });
-                return { x, y };
-              }
-            }
+        return result;
+      } catch (error) {
+        // Clean up the failed page before retrying
+        if (currentPage && !currentPage.isClosed()) {
+          try {
+            await currentPage.close();
+          } catch (e) {
+            /* ignore */
           }
         }
-        attempts++;
-      } catch (error) {
+
         if (error.message.includes("Request was canceled") || signal?.aborted) {
-          if (!abortHandlerCalled) {
-            await abortHandler();
-          }
+          if (!abortHandlerCalled) await abortHandler();
           throw new Error("Request was canceled");
         }
+
         attempts++;
-        if (attempts === maxAttempts) throw error;
+        console.warn(
+          `GovMap navigation attempt ${attempts} failed. Retrying...`,
+        );
+
+        if (attempts === this.MAX_ATTEMPTS) {
+          throw error;
+        }
       }
     }
 
     throw new Error("Failed to get coordinates after multiple attempts");
+  }
+
+  /**
+   * Handles a single navigation attempt and waits for the GovMap redirect.
+   * @param {import('puppeteer').Page} page - Puppeteer page instance.
+   * @param {string} baseUrl - The initial URL to navigate to.
+   * @param {AbortSignal} signal - Signal to handle request cancellation.
+   * @param {Function} abortHandler - Cleanup function for aborted requests.
+   * @returns {Promise<{x: number, y: number}>} Extracted ITM coordinates.
+   * @private
+   */
+  async _attemptNavigation(page, baseUrl, signal, abortHandler) {
+    if (signal?.aborted) {
+      await abortHandler();
+      throw new Error("Request was canceled");
+    }
+
+    const navigationPromise = page.goto(baseUrl, {
+      waitUntil: "networkidle2",
+      timeout: this.NAVIGATION_TIMEOUT,
+    });
+
+    // Race between navigation and the abort signal
+    await Promise.race([
+      navigationPromise,
+      new Promise((_, reject) => {
+        if (signal) {
+          signal.addEventListener(
+            "abort",
+            () => reject(new Error("Request was canceled during navigation")),
+            { once: true },
+          );
+        }
+      }),
+    ]);
+
+    if (signal?.aborted) {
+      await abortHandler();
+      throw new Error("Request was canceled");
+    }
+
+    // Wait for GovMap to process and inject the 'c' parameter into the URL
+    await page.waitForFunction(
+      (url) => location.href !== url,
+      { timeout: this.REDIRECT_TIMEOUT },
+      baseUrl,
+    );
+
+    const finalUrl = page.url();
+    console.log("GovMap redirected URL:", finalUrl);
+
+    return this._extractCoordinatesFromUrl(finalUrl);
+  }
+
+  /**
+   * Extracts ITM coordinates from the 'c' parameter in the GovMap URL.
+   * @param {string} finalUrl - The URL after GovMap redirect.
+   * @returns {{x: number, y: number}} Extracted coordinates.
+   * @throws {Error} If coordinates cannot be found or parsed correctly.
+   * @private
+   */
+  _extractCoordinatesFromUrl(finalUrl) {
+    if (finalUrl.includes("c")) {
+      const url = new URL(finalUrl);
+      const cParam = url.searchParams.get("c");
+
+      if (cParam) {
+        const coords = cParam.split(",");
+        if (coords.length === 2) {
+          const [x, y] = coords.map(parseFloat);
+          if (!isNaN(x) && !isNaN(y)) {
+            console.log("Extracted coordinates:", { itmX: x, itmY: y });
+            return { x, y };
+          }
+        }
+      }
+    }
+    throw new Error("Could not extract valid coordinates from the GovMap URL");
   }
 }
 
