@@ -59,8 +59,10 @@ const validateInput = (input) => {
   // Check for 3-5 digit numbers
   const isValidNumber = /^\d{3,5}$/.test(trimmedInput);
 
-  // Check for valid URL
-  const isValidUrl = /^https?:\/\/www\.dira\.moch\.gov\.il/.test(trimmedInput);
+  // Check for valid URL (made 'www.' optional)
+  const isValidUrl = /^https?:\/\/(www\.)?dira\.moch\.gov\.il/.test(
+    trimmedInput,
+  );
 
   return isValidNumber || isValidUrl;
 };

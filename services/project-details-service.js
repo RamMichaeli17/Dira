@@ -15,11 +15,9 @@ class ProjectDetailsService {
     // Validate input format
     if (
       !/^\d{3,5}$/.test(projectInput) &&
-      !/^https?:\/\/www\.dira\.moch\.gov\.il/.test(projectInput)
+      !/^https?:\/\/(www\.)?dira\.moch\.gov\.il/.test(projectInput)
     ) {
-      throw new Error(
-        "Invalid input. Please enter a 3-5 digit number or a valid dira.moch.gov.il URL.",
-      );
+      throw new Error("invalidInput");
     }
 
     // Handle 3 or 4 digit lottery numbers (Requires scraping)
@@ -33,11 +31,11 @@ class ProjectDetailsService {
     }
 
     // Handle URLs
-    if (/^https?:\/\/www\.dira\.moch\.gov\.il/.test(projectInput)) {
+    if (/^https?:\/\/(www\.)?dira\.moch\.gov\.il/.test(projectInput)) {
       return this.extractFromUrl(projectInput);
     }
 
-    throw new Error("Invalid input format.");
+    throw new Error("invalidInput");
   }
 
   /**
@@ -112,7 +110,7 @@ class ProjectDetailsService {
       const matches = currentURL.match(/\/(\d{2,5})\/(\d{3,4})\/ProjectInfo/);
 
       if (!matches) {
-        throw new Error("Failed to extract project number from URL");
+        throw new Error("processingError");
       }
 
       return {
@@ -141,7 +139,7 @@ class ProjectDetailsService {
         .filter((segment) => /^\d+$/.test(segment));
 
       if (pathSegments.length < 2) {
-        throw new Error("Invalid URL format");
+        throw new Error("invalidInput");
       }
 
       return {
@@ -149,7 +147,7 @@ class ProjectDetailsService {
         lotteryNumber: pathSegments[1],
       };
     } catch (error) {
-      throw new Error(`Invalid URL format: ${error.message}`);
+      throw new Error("invalidInput");
     }
   }
 }
