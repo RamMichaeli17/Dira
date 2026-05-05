@@ -1,4 +1,5 @@
 // routes/conversion-routes.js
+
 const express = require("express");
 const router = express.Router();
 const queueService = require("../services/queue-service");
@@ -28,7 +29,7 @@ async function processQueue() {
 
       const result = await conversionService.processProjectInput(
         req.body.projectInput,
-        abortController.signal
+        abortController.signal,
       );
 
       if (!abortController.signal.aborted) {
@@ -67,8 +68,11 @@ async function processQueue() {
  * POST /convert
  */
 router.post("/convert", async (req, res) => {
-  const requestId = req.headers["x-request-id"];
-  console.log("Received project input:", req.body.projectInput);
+  // Ensure requestId always exists, even if header is missing (e.g., direct API calls)
+  const requestId = req.headers["x-request-id"] || Date.now().toString();
+  req.headers["x-request-id"] = requestId; // Normalize for downstream services
+
+  console.log(`Received project input: ${req.body.projectInput}`);
 
   if (!req.body.projectInput) {
     return res.status(400).json({
@@ -79,17 +83,16 @@ router.post("/convert", async (req, res) => {
   }
 
   try {
-    // Check cache first before adding to queue
-    const abortController = new AbortController();
-    queueService.add({ req, res, abortController });
-
+    // Check cache FIRST before touching the queue to prevent phantom queue items
     const cacheResult = await conversionService.checkCacheForRequest(
-      req.body.projectInput
+      req.body.projectInput,
     );
 
-    // If data was found in cache, return immediately
+    // If data was found in cache, return immediately (No need to queue!)
     if (cacheResult.fromCache) {
-      queueService.removeById(requestId);
+      console.log(
+        `Cache hit for project ${req.body.projectInput} - returning immediately.`,
+      );
       return res.json({
         ...cacheResult.data,
         requestId: requestId,
@@ -98,7 +101,11 @@ router.post("/convert", async (req, res) => {
       });
     }
 
-    // If not in cache, add to queue for processing
+    // If NOT in cache, create AbortController and add to queue
+    const abortController = new AbortController();
+    queueService.add({ req, res, abortController });
+
+    // Start processing if this is the only item in the queue
     if (queueService.getLength() === 1) {
       processQueue();
     }
