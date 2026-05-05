@@ -3,9 +3,14 @@
 import { uiUtils, buttonUtils } from "./utils.js";
 import { requestState } from "./stateUtils.js";
 import { languageUtils } from "./languageUtils.js";
-import { translations } from "./translations.js";
 
-window.handleLanguageChange = function (lang) {
+let abortController = null;
+
+/**
+ * Handles the language switching logic and triggers a page reload with animation.
+ * @param {string} lang - The language code to switch to (e.g., 'he' or 'en').
+ */
+const handleLanguageChange = (lang) => {
   const currentLang = languageUtils.getCurrentLanguage();
   if (lang === currentLang) {
     const select = document.querySelector(".custom-select");
@@ -42,19 +47,11 @@ window.handleLanguageChange = function (lang) {
   }, 400);
 };
 
-function updateLanguageButtons() {
-  const currentLang = languageUtils.getCurrentLanguage();
-  document.querySelectorAll(".lang-btn").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.lang === currentLang);
-  });
-}
-
-let abortController = null;
-
 /**
- * Validate project input
- * @param {string} input - User input to validate
- * @returns {boolean} - Whether input is valid
+ * Validates the user's project input.
+ * Accepts either a 3-5 digit project number or a valid dira.moch.gov.il URL.
+ * @param {string} input - The raw user input string.
+ * @returns {boolean} - True if the input is valid, false otherwise.
  */
 const validateInput = (input) => {
   const trimmedInput = input.trim();
@@ -69,12 +66,12 @@ const validateInput = (input) => {
 };
 
 /**
- * Start conversion process
+ * Initiates the conversion process, handles the API request to the backend,
+ * and manages UI states (loading, errors, results).
  */
 const startConversion = async () => {
   const projectInput = document.getElementById("projectInput").value.trim();
 
-  // Input validation
   if (!projectInput) {
     uiUtils.showError("projectRequired");
     return;
@@ -87,7 +84,7 @@ const startConversion = async () => {
 
   buttonUtils.updateButtonStates(true);
   uiUtils.showLoading();
-  uiUtils.hideError(); // Hide any previous error messages
+  uiUtils.hideError();
 
   if (abortController) {
     await cancelConversion();
@@ -128,7 +125,9 @@ const startConversion = async () => {
   }
 };
 
-// Enhance the updateQueueStatus function
+/**
+ * Polls the server periodically to update the user's current position in the queue.
+ */
 const updateQueueStatus = async () => {
   if (!requestState.getCurrentRequestId()) {
     return;
@@ -154,6 +153,9 @@ const updateQueueStatus = async () => {
   }
 };
 
+/**
+ * Cancels the ongoing conversion request both on the client and server sides.
+ */
 const cancelConversion = async () => {
   if (abortController) {
     abortController.abort();
@@ -161,7 +163,6 @@ const cancelConversion = async () => {
     document.getElementById("queueStatus").style.display = "none";
 
     try {
-      // Wait for the cancel request to complete
       const response = await fetch("/cancel", {
         method: "POST",
         headers: {
@@ -171,14 +172,8 @@ const cancelConversion = async () => {
       });
 
       if (response.ok) {
-        const currentLang = languageUtils.getCurrentLanguage();
-        // Only clear request ID after successful cancellation
         requestState.clearCurrentRequestId();
-        document.getElementById(
-          "output"
-        ).innerHTML = `<p>${translations[currentLang].errorMessages["requestCanceled"]}</p>`;
-
-        // Start cooldown after successful cancellation
+        uiUtils.showError("requestCanceled");
         buttonUtils.startCooldown();
       }
     } catch (error) {
@@ -187,14 +182,14 @@ const cancelConversion = async () => {
   }
 };
 
-// Event listeners
+// --- Event Listeners ---
+
 document.getElementById("convertButton").addEventListener("click", () => {
   startConversion();
   setTimeout(updateQueueStatus, 300);
 });
 
 document.getElementById("cancelButton").addEventListener("click", async () => {
-  // Wait for cancellation to complete
   await cancelConversion();
 });
 
@@ -209,10 +204,8 @@ document.getElementById("projectInput").addEventListener("keydown", (event) => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Add loaded class to body to show content
   document.body.classList.add("loaded");
 
-  // Only create and remove loading overlay once
   const initialLoadOverlay = document.createElement("div");
   initialLoadOverlay.className = "page-reload initial-load active";
   initialLoadOverlay.innerHTML = '<div class="reload-spinner"></div>';
@@ -246,7 +239,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Set initial selection
   const initialOption = Array.from(options).find(
-    (opt) => opt.dataset.value === savedLang
+    (opt) => opt.dataset.value === savedLang,
   );
 
   if (initialOption) {

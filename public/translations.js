@@ -1,3 +1,10 @@
+// public/translations.js
+
+/**
+ * Dictionary containing all the localized strings for the application.
+ * Supports English ('en') and Hebrew ('he').
+ * @type {Object}
+ */
 export const translations = {
   en: {
     title: "Project Link Converter",

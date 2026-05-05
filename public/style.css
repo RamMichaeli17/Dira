@@ -1,6 +1,8 @@
 @import url("https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600&display=swap");
 
-/* General Styles */
+/* =========================================
+   Base Styles & Layout
+   ========================================= */
 body {
   font-family: "Rubik", sans-serif;
   margin: 0;
@@ -9,7 +11,12 @@ body {
   color: #333;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.3s ease, visibility 0.3s;
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
 body.loaded {
@@ -17,19 +24,26 @@ body.loaded {
   visibility: visible;
 }
 
-/* Centering Content */
 .container {
+  width: 90%;
   max-width: 600px;
-  margin: 50px auto;
+  margin: 10vh auto 50px auto;
   background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   overflow: hidden;
-  padding: 20px;
+  padding: 50px 30px;
   text-align: center;
+  box-sizing: border-box;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-/* Header */
+/* =========================================
+   Typography & Headers
+   ========================================= */
 h1 {
   font-size: 24px;
   color: #2d89ef;
@@ -42,7 +56,9 @@ p {
   margin-bottom: 20px;
 }
 
-/* Input Field */
+/* =========================================
+   Form Elements (Inputs & Buttons)
+   ========================================= */
 input[type="text"] {
   width: 100%;
   padding: 12px;
@@ -52,12 +68,6 @@ input[type="text"] {
   margin-bottom: 20px;
   box-sizing: border-box;
   transition: border-color 0.2s ease-in-out;
-  text-align: center !important; /* Force center alignment regardless of direction */
-}
-
-/* RTL Support */
-[dir="rtl"] input[type="text"],
-[dir="ltr"] input[type="text"] {
   text-align: center !important;
 }
 
@@ -66,7 +76,6 @@ input[type="text"]:focus {
   outline: none;
 }
 
-/* Buttons */
 button {
   width: 100%;
   padding: 12px;
@@ -89,7 +98,6 @@ button:disabled {
   opacity: 0.6;
 }
 
-/* Cancel Button */
 #cancelButton {
   background-color: #e74c3c;
   margin-top: 10px;
@@ -99,7 +107,15 @@ button:disabled {
   background-color: #c0392b;
 }
 
-/* Loading Spinner */
+.button-container {
+  position: relative;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+/* =========================================
+   Loading & Queue Indicators
+   ========================================= */
 .loading {
   display: none;
   margin: 20px 0;
@@ -131,17 +147,6 @@ button:disabled {
   animation-delay: -1s;
 }
 
-@keyframes sk-bounce {
-  0%,
-  100% {
-    transform: scale(0);
-  }
-  50% {
-    transform: scale(1);
-  }
-}
-
-/* Queue Status */
 .queue-status {
   margin: 20px 0;
   padding: 20px;
@@ -180,26 +185,15 @@ button:disabled {
   animation-delay: 0.4s;
 }
 
-@keyframes dotPulse {
-  0%,
-  100% {
-    transform: scale(0.8);
-    opacity: 0.5;
-  }
-  50% {
-    transform: scale(1.2);
-    opacity: 1;
-  }
-}
-
-/* Output */
+/* =========================================
+   Outputs & Map Sections
+   ========================================= */
 .output {
   margin-top: 20px;
   padding: 0;
   border-radius: 8px;
 }
 
-/* Updated Map Sections */
 .map-section {
   margin: 30px 0;
   background: #fff;
@@ -257,7 +251,25 @@ button:disabled {
   border: none;
 }
 
-/* Error Message Styles */
+#mapPreview,
+#googleMapPreview {
+  width: 100%;
+  margin-top: 0;
+  border: none;
+  overflow: hidden;
+}
+
+#govMapFrame,
+#googleMapFrame {
+  width: 100%;
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* =========================================
+   Error Messages
+   ========================================= */
 .error-container {
   margin: 10px 0;
   overflow: hidden;
@@ -298,82 +310,32 @@ button:disabled {
   flex-shrink: 0;
 }
 
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-    max-height: 0;
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-    max-height: 200px;
-  }
-}
-
-/* RTL Support for error messages */
 [dir="rtl"] .error-message {
   flex-direction: row-reverse;
 }
 
-/* Ensure error message text doesn't overflow container on mobile */
-@media screen and (max-width: 768px) {
-  .error-message {
-    padding: 12px;
-    font-size: 13px;
-  }
-}
-
-@keyframes cooldown {
-  from {
-    width: 0%;
-  }
-  to {
-    width: 100%;
-  }
-}
-
-.button-container {
-  position: relative;
-  width: 100%;
-  margin-bottom: 10px;
-}
-
-.cooldown-progress {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  height: 4px;
-  width: 0%;
-  background-color: #2d89ef;
-  border-radius: 0 0 8px 8px;
-}
-
-.cooldown-active {
-  opacity: 0.7;
-  cursor: not-allowed !important;
-}
-
-/* Language Switcher */
+/* =========================================
+   Language Switcher & Select Dropdown
+   ========================================= */
 .language-switcher {
   position: absolute;
   top: 20px;
   z-index: 1000;
   transition: all 0.3s ease;
-  opacity: 0; /* Start invisible */
+  opacity: 0;
 }
 
 .language-switcher.loaded {
-  opacity: 1; /* Fade in when positioned */
+  opacity: 1;
 }
 
 [dir="ltr"] .language-switcher {
-  right: 20px !important; /* Force position */
+  right: 20px !important;
   left: auto !important;
 }
 
 [dir="rtl"] .language-switcher {
-  left: 20px !important; /* Force position */
+  left: 20px !important;
   right: auto !important;
 }
 
@@ -394,7 +356,7 @@ button:disabled {
   cursor: pointer;
   transition: all 0.2s ease;
   justify-content: center;
-  min-height: 36px; /* Ensure consistent height */
+  min-height: 36px;
 }
 
 .select-trigger:hover {
@@ -409,7 +371,7 @@ button:disabled {
 }
 
 .arrow {
-  margin-left: 8px; /* Fixed spacing */
+  margin-left: 8px;
   margin-right: 0;
   width: 8px;
   height: 8px;
@@ -417,7 +379,12 @@ button:disabled {
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
   transition: transform 0.2s ease;
-  flex-shrink: 0; /* Prevent arrow from shrinking */
+  flex-shrink: 0;
+}
+
+[dir="rtl"] .arrow {
+  margin-left: 0;
+  margin-right: 8px;
 }
 
 .custom-select.open .arrow {
@@ -438,7 +405,7 @@ button:disabled {
   visibility: hidden;
   transform: translateY(-10px);
   transition: all 0.2s ease;
-  overflow: hidden; /* Ensure divider stays within bounds */
+  overflow: hidden;
 }
 
 .custom-select.open .select-dropdown {
@@ -450,14 +417,13 @@ button:disabled {
 .select-option {
   display: flex;
   align-items: center;
-  justify-content: center; /* Center content */
+  justify-content: center;
   gap: 10px;
-  padding: 10px 14px; /* Reduced padding */
+  padding: 10px 14px;
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
 
-/* Language divider */
 .select-option:first-child {
   border-radius: 8px 8px 0 0;
 }
@@ -466,7 +432,13 @@ button:disabled {
   border-bottom: 1px solid #e2e8f0;
 }
 
-/* Loading animation */
+.select-option:hover {
+  background-color: #f8f9fa;
+}
+
+/* =========================================
+   Page Reload Overlay
+   ========================================= */
 .page-reload {
   position: fixed;
   top: 0;
@@ -483,19 +455,22 @@ button:disabled {
   transition: all 0.3s ease;
 }
 
-.select-option:hover {
-  background-color: #f8f9fa;
-}
-
-/* RTL Support */
-[dir="rtl"] .arrow {
-  margin-left: 0;
-  margin-right: 8px;
-}
-
 .page-reload.active {
   opacity: 1;
   visibility: visible;
+}
+
+.page-reload.initial-load {
+  background: rgba(255, 255, 255, 1);
+  z-index: 9999;
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s;
+}
+
+.page-reload.initial-load:not(.active) {
+  opacity: 0;
+  visibility: hidden;
 }
 
 .reload-spinner {
@@ -507,6 +482,71 @@ button:disabled {
   animation: spin 1s linear infinite;
 }
 
+/* =========================================
+   Footer
+   ========================================= */
+footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin-top: auto;
+  padding: 15px 0;
+  background-color: #e9ecef;
+  border-top: 1px solid #dee2e6;
+  color: #495057;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 10;
+}
+
+/* =========================================
+   Animations
+   ========================================= */
+@keyframes sk-bounce {
+  0%,
+  100% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1);
+  }
+}
+
+@keyframes dotPulse {
+  0%,
+  100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 200px;
+  }
+}
+
+@keyframes cooldown {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
 @keyframes spin {
   0% {
     transform: rotate(0deg);
@@ -516,7 +556,24 @@ button:disabled {
   }
 }
 
-/* Mobile Responsive - Updated */
+.cooldown-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  width: 0%;
+  background-color: #2d89ef;
+  border-radius: 0 0 8px 8px;
+}
+
+.cooldown-active {
+  opacity: 0.7;
+  cursor: not-allowed !important;
+}
+
+/* =========================================
+   Media Queries (Responsive Design)
+   ========================================= */
 @media screen and (max-width: 768px) {
   .language-switcher {
     position: static;
@@ -529,12 +586,19 @@ button:disabled {
   }
 
   .container {
-    margin-top: 20px;
-    padding-top: 20px;
+    margin-top: 5vh;
+    padding: 30px 15px;
+    width: 95%;
+    min-height: 250px;
+  }
+
+  .error-message {
+    padding: 12px;
+    font-size: 13px;
   }
 }
 
-/* Webkit browsers custom styling */
+/* Webkit Browsers Custom Styling */
 @media screen and (-webkit-min-device-pixel-ratio: 0) {
   .select-trigger {
     border-radius: 8px;
@@ -545,54 +609,11 @@ button:disabled {
   }
 }
 
-/* RTL Support with centered content */
+/* RTL Global Adjustments */
 [dir="rtl"] .container {
   text-align: center;
 }
 
 [dir="rtl"] input[type="text"] {
   text-align: center;
-}
-
-/* Footer */
-footer {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  margin-top: 20px;
-  font-size: 16px;
-  color: #555;
-  text-align: center;
-  background-color: #f0f4f8;
-  padding: 10px 0;
-  border-top: 1px solid #ddd;
-  font-weight: bold;
-}
-
-/* Map Preview Styles */
-#mapPreview,
-#googleMapPreview {
-  width: 100%;
-  margin-top: 0;
-  border: none;
-  overflow: hidden;
-}
-
-#govMapFrame,
-#googleMapFrame {
-  width: 100%;
-  border: none;
-  margin: 0;
-  padding: 0;
-}
-
-.page-reload.initial-load {
-  background: rgba(255, 255, 255, 1);
-  z-index: 9999;
-  transition: opacity 0.3s ease, visibility 0.3s;
-}
-
-.page-reload.initial-load:not(.active) {
-  opacity: 0;
-  visibility: hidden;
 }

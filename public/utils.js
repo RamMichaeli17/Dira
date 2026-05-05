@@ -2,14 +2,13 @@
 
 import { languageUtils } from "./languageUtils.js";
 import { requestState } from "./stateUtils.js";
-import { translations } from "./translations.js";
 
 /**
- * UI utility functions
+ * UI utility functions for managing DOM elements, states, and dynamic content.
  */
 export const uiUtils = {
   /**
-   * Show loading state
+   * Displays the loading spinner and hides all other main UI elements.
    */
   showLoading: () => {
     document.getElementById("loading").style.display = "block";
@@ -20,33 +19,25 @@ export const uiUtils = {
   },
 
   /**
-   * Hide loading state
+   * Hides the loading spinner.
    */
   hideLoading: () => {
     document.getElementById("loading").style.display = "none";
   },
 
   /**
-   * Show error message with animation
-   * @param {string} messageKey Key for the error message in translations
+   * Displays an error message inside the output container.
+   * @param {string} messageKey - The key corresponding to the translation dictionary (e.g., 'invalidInput').
    */
   showError: (messageKey) => {
     const outputDiv = document.getElementById("output");
-    const currentLang = languageUtils.getCurrentLanguage();
+    const errorMessage = languageUtils.getText(`errorMessages.${messageKey}`);
 
-    // Get translated error message
-    let errorMessage = messageKey;
-    if (translations[currentLang]?.errorMessages?.[messageKey]) {
-      errorMessage = translations[currentLang].errorMessages[messageKey];
-    }
-
-    // Remove any existing error immediately without animation
     const existingError = outputDiv.querySelector(".error-container");
     if (existingError) {
       existingError.remove();
     }
 
-    // Create new error message
     const errorContainer = document.createElement("div");
     errorContainer.className = "error-container";
     errorContainer.innerHTML = `<div class="error-message">${errorMessage}</div>`;
@@ -55,15 +46,13 @@ export const uiUtils = {
     outputDiv.appendChild(errorContainer);
     outputDiv.style.display = "block";
 
-    // Hide other elements
     document.getElementById("mapPreview").style.display = "none";
     document.getElementById("googleMapPreview").style.display = "none";
     document.getElementById("queueStatus").style.display = "none";
-    document.querySelector("footer").style.position = "absolute";
   },
 
   /**
-   * Hide error message without animation
+   * Removes any active error messages from the DOM.
    */
   hideError: () => {
     const outputDiv = document.getElementById("output");
@@ -75,26 +64,23 @@ export const uiUtils = {
   },
 
   /**
-   * Update queue display
+   * Updates the queue status UI based on the user's position in the queue.
+   * @param {number} queueLength - The current total number of items in the queue.
+   * @param {boolean} isFirstInQueue - True if the user's request is currently being processed.
    */
   updateQueueDisplay: (queueLength, isFirstInQueue) => {
-    const currentLang = languageUtils.getCurrentLanguage();
     const queueStatusDiv = document.getElementById("queueStatus");
     const loadingDiv = document.getElementById("loading");
 
-    // Hide both initially
     queueStatusDiv.style.display = "none";
     loadingDiv.style.display = "none";
 
-    // Only show status if we have a valid queue length and the request wasn't canceled
     if (queueLength > 0 && requestState.getCurrentRequestId()) {
       if (isFirstInQueue) {
-        // Show processing for first in queue
         loadingDiv.style.display = "block";
       } else {
-        // Show queue status for others
         queueStatusDiv.innerHTML = `
-          <div class="queue-message">${translations[currentLang].requestInQueue}</div>
+          <div class="queue-message">${languageUtils.getText("requestInQueue")}</div>
           <div class="queue-dots">
             <div class="dot"></div>
             <div class="dot"></div>
@@ -107,24 +93,21 @@ export const uiUtils = {
   },
 
   /**
-   * Add loading placeholder for iframes
-   * @param {HTMLElement} mapSection
-   * @param {HTMLIFrameElement} iframe
-   * @param {string} src
+   * Appends a loading overlay to a map container until the iframe finishes loading.
+   * @param {HTMLElement} mapSection - The wrapper section for the specific map.
+   * @param {HTMLIFrameElement} iframe - The iframe element that loads the map.
+   * @param {string} src - The URL source to load into the iframe.
    */
   addIframeLoadingPlaceholder: (mapSection, iframe, src) => {
-    const currentLang = languageUtils.getCurrentLanguage();
-    // Create loading overlay
     const loadingOverlay = document.createElement("div");
     loadingOverlay.className = "iframe-loading-overlay";
     loadingOverlay.innerHTML = `
       <div class="iframe-spinner">
         <div class="spinner"></div>
-        <p>${translations[currentLang].loadingMap}</p>
+        <p>${languageUtils.getText("loadingMap")}</p>
       </div>
     `;
 
-    // Style the overlay
     loadingOverlay.style.cssText = `
       position: absolute;
       top: 0;
@@ -138,20 +121,18 @@ export const uiUtils = {
       z-index: 10;
     `;
 
-    // Insert loading overlay
     const mapContainer = mapSection.querySelector(".map-container");
     mapContainer.style.position = "relative";
     mapContainer.appendChild(loadingOverlay);
 
-    // Reset iframe
     iframe.src = "";
     iframe.style.opacity = "0";
 
-    // Load iframe with events
     iframe.onload = () => {
       iframe.style.opacity = "1";
       loadingOverlay.remove();
     };
+
     iframe.onerror = () => {
       loadingOverlay.innerHTML = `
         <div class="iframe-error">
@@ -161,13 +142,13 @@ export const uiUtils = {
       console.error("Failed to load map iframe");
     };
 
-    // Set source after setting up event handlers
     iframe.src = src;
     mapSection.style.display = "block";
   },
 
   /**
-   * Display results
+   * Renders the final successful response data and populates map iframes.
+   * @param {Object} data - The conversion data returned from the server.
    */
   displayResults: (data) => {
     document.getElementById("loading").style.display = "none";
@@ -177,26 +158,23 @@ export const uiUtils = {
     const govMapSection = document.getElementById("mapPreview");
     const googleMapSection = document.getElementById("googleMapPreview");
     const currentLang = languageUtils.getCurrentLanguage();
-    const labels = translations[currentLang].mapLabels;
-    const errorMessages = translations[currentLang].errorMessages;
 
-    // Reset all sections
     outputDiv.innerHTML = "";
     govMapSection.style.display = "none";
     googleMapSection.style.display = "none";
 
     if (data.error) {
-      outputDiv.innerHTML = `<div class="error-message">${errorMessages.processingError}</div>`;
+      outputDiv.innerHTML = `<div class="error-message">${languageUtils.getText("errorMessages.processingError")}</div>`;
       return;
     }
 
     if (data.googleMapsUrl && data.updatedUrl) {
-      // Update Google Maps URL with correct language parameter
       const langParam = currentLang === "he" ? "iw" : "en";
       const googleMapsUrl = `${data.googleMapsUrl}&hl=${langParam}`;
 
-      // Update GovMap section
-      govMapSection.querySelector("strong").textContent = labels.updatedUrl;
+      govMapSection.querySelector("strong").textContent = languageUtils.getText(
+        "mapLabels.updatedUrl",
+      );
       const govMapLink = govMapSection.querySelector(".map-link");
       govMapLink.href = data.updatedUrl;
       govMapLink.textContent = data.updatedUrl;
@@ -204,47 +182,45 @@ export const uiUtils = {
       const govMapFrame = document.getElementById("govMapFrame");
       const googleMapFrame = document.getElementById("googleMapFrame");
 
-      // Add loading placeholder for GovMap
       if (data.govMapIframeUrl) {
         uiUtils.addIframeLoadingPlaceholder(
           govMapSection,
           govMapFrame,
-          data.govMapIframeUrl
+          data.govMapIframeUrl,
         );
       }
 
-      // Add loading placeholder for Google Maps
-      googleMapSection.querySelector("strong").textContent = labels.googleMaps;
+      googleMapSection.querySelector("strong").textContent =
+        languageUtils.getText("mapLabels.googleMaps");
       const googleMapLink = googleMapSection.querySelector(".map-link");
       googleMapLink.href = googleMapsUrl;
       googleMapLink.textContent = googleMapsUrl;
 
       if (data.googleMapsIframeUrl) {
         const googleMapsIframeUrl = `${data.googleMapsIframeUrl}&hl=${langParam}&zoom=15&output=embed`;
-        document.querySelector("footer").style.position = "relative";
         uiUtils.addIframeLoadingPlaceholder(
           googleMapSection,
           googleMapFrame,
-          googleMapsIframeUrl
+          googleMapsIframeUrl,
         );
       }
 
-      // Set RTL/LTR direction
       const direction = currentLang === "he" ? "rtl" : "ltr";
       govMapSection.querySelector(".map-heading").dir = direction;
       googleMapSection.querySelector(".map-heading").dir = direction;
     } else {
-      outputDiv.innerHTML = `<div class="error-message">${errorMessages.processingError}</div>`;
+      outputDiv.innerHTML = `<div class="error-message">${languageUtils.getText("errorMessages.processingError")}</div>`;
     }
   },
 };
 
 /**
- * Button utility functions
+ * Utility functions for handling interactive buttons and user input restrictions.
  */
 export const buttonUtils = {
   /**
-   * Update button states
+   * Toggles the disabled state of the submit button and visibility of the cancel button.
+   * @param {boolean} isConverting - True if the application is currently processing a request.
    */
   updateButtonStates: (isConverting) => {
     const convertButton = document.getElementById("convertButton");
@@ -254,14 +230,15 @@ export const buttonUtils = {
     cancelButton.style.display = isConverting ? "inline-block" : "none";
   },
 
+  /**
+   * Initializes a UI cooldown animation to prevent spamming requests.
+   */
   startCooldown: () => {
     const convertButton = document.getElementById("convertButton");
-    const cooldownDuration = 5000; // 5 seconds
+    const cooldownDuration = 5000;
 
-    // Create or get cooldown progress bar
     let progressBar = document.querySelector(".cooldown-progress");
     if (!progressBar) {
-      // Wrap button in container if not already wrapped
       let container = document.querySelector(".button-container");
       if (!container) {
         container = document.createElement("div");
@@ -275,16 +252,13 @@ export const buttonUtils = {
       container.appendChild(progressBar);
     }
 
-    // Add cooldown state
     convertButton.disabled = true;
     convertButton.classList.add("cooldown-active");
 
-    // Reset and start animation
     progressBar.style.animation = "none";
-    progressBar.offsetHeight; // Trigger reflow
+    progressBar.offsetHeight;
     progressBar.style.animation = `cooldown ${cooldownDuration}ms linear`;
 
-    // Remove cooldown after duration
     setTimeout(() => {
       convertButton.disabled = false;
       convertButton.classList.remove("cooldown-active");
