@@ -115,7 +115,7 @@ class GovMapService {
     }
 
     const navigationPromise = page.goto(baseUrl, {
-      waitUntil: "networkidle2",
+      waitUntil: "domcontentloaded",
       timeout: this.NAVIGATION_TIMEOUT,
     });
 
@@ -139,11 +139,13 @@ class GovMapService {
     }
 
     // Wait for GovMap to process and inject the 'c' parameter into the URL
-    await page.waitForFunction(
-      (url) => location.href !== url,
-      { timeout: this.REDIRECT_TIMEOUT },
-      baseUrl,
+    console.log(
+      "Page structure loaded, waiting for GovMap to inject coordinates into URL...",
     );
+
+    await page.waitForFunction(() => window.location.href.includes("c="), {
+      timeout: this.REDIRECT_TIMEOUT,
+    });
 
     const finalUrl = page.url();
     console.log("GovMap redirected URL:", finalUrl);

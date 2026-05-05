@@ -1,7 +1,8 @@
 // services/queue-service.js
 
 /**
- * Simple queue service for managing request processing
+ * Simple queue service for managing sequential request processing.
+ * Prevents overloading the browser instance by executing one task at a time.
  */
 class QueueService {
   constructor() {
@@ -11,23 +12,27 @@ class QueueService {
   }
 
   /**
-   * Add request to queue
-   * @param {Object} request Request object with req, res and abortController
-   * @returns {number} Queue length
+   * Adds a new request to the end of the queue.
+   * @param {Object} request - Request object containing req, res, and abortController.
+   * @returns {number} The new length of the queue.
    */
   add(request) {
-    request.id = request.req.headers["x-request-id"];
+    // FIX: Added optional chaining and a fallback ID to prevent errors
+    // if the 'x-request-id' header is missing or malformed.
+    request.id =
+      request.req?.headers?.["x-request-id"] || Date.now().toString();
+
     this.queue.push(request);
     console.log(
-      `Request ${request.id} added to queue. Queue length: ${this.queue.length}`
+      `Request ${request.id} added to queue. Queue length: ${this.queue.length}`,
     );
     return this.queue.length;
   }
 
   /**
-   * Remove request by ID from anywhere in the queue
-   * @param {string} requestId ID of request to remove
-   * @returns {Object|null} Removed request or null if not found
+   * Removes a specific request by its ID from anywhere in the queue (e.g., when a user aborts).
+   * @param {string} requestId - The ID of the request to remove.
+   * @returns {Object|null} The removed request object, or null if not found.
    */
   removeById(requestId) {
     const index = this.queue.findIndex((request) => request.id === requestId);
@@ -36,28 +41,29 @@ class QueueService {
     const request = this.queue[index];
     this.queue.splice(index, 1);
 
-    // If we removed the current request, clear the currentRequestId
+    // If we removed the currently processing request, clear the state
     if (request.id === this.currentRequestId) {
       this.currentRequestId = null;
       this.isProcessing = false;
     }
 
     console.log(
-      `Request ${requestId} removed from queue. Queue length: ${this.queue.length}`
+      `Request ${requestId} removed from queue. Queue length: ${this.queue.length}`,
     );
     return request;
   }
 
   /**
-   * Remove and return first request
-   * @returns {Object|null} First request or null if queue empty
+   * Removes and returns the first request in the queue (FIFO).
+   * @returns {Object|null} The first request, or null if the queue is empty.
    */
   remove() {
     const request = this.queue.shift();
     if (request) {
       console.log(
-        `Request ${request.id} removed from queue. Queue length: ${this.queue.length}`
+        `Request ${request.id} removed from queue. Queue length: ${this.queue.length}`,
       );
+      // Reset processing state so the next item can start
       this.currentRequestId = null;
       this.isProcessing = false;
     }
@@ -65,32 +71,32 @@ class QueueService {
   }
 
   /**
-   * Get first request without removing
-   * @returns {Object|null} First request or null if queue empty
+   * Returns the first request without removing it from the queue.
+   * @returns {Object|null} The first request, or null if the queue is empty.
    */
   peek() {
     return this.queue[0] || null;
   }
 
   /**
-   * Get queue length
-   * @returns {number} Queue length
+   * Gets the current number of requests waiting in the queue.
+   * @returns {number} Queue length.
    */
   getLength() {
     return this.queue.length;
   }
 
   /**
-   * Check if request is being processed
-   * @returns {boolean} Processing status
+   * Checks if the queue is currently processing a request.
+   * @returns {boolean} True if busy, false otherwise.
    */
   isCurrentlyProcessing() {
     return this.isProcessing;
   }
 
   /**
-   * Update processing status
-   * @param {boolean} status New status
+   * Updates the processing status of the queue.
+   * @param {boolean} status - The new processing status.
    */
   setProcessingStatus(status) {
     this.isProcessing = status;
@@ -98,17 +104,17 @@ class QueueService {
   }
 
   /**
-   * Get ID of request being processed
-   * @returns {string|null} Current request ID
+   * Gets the ID of the request currently being processed.
+   * @returns {string|null} Current request ID.
    */
   getCurrentRequestId() {
     return this.currentRequestId;
   }
 
   /**
-   * Check if request exists in queue
-   * @param {string} requestId Request ID to check
-   * @returns {boolean} True if request exists in queue
+   * Checks if a specific request ID currently exists anywhere in the queue.
+   * @param {string} requestId - The request ID to look for.
+   * @returns {boolean} True if found, false otherwise.
    */
   hasRequest(requestId) {
     return this.queue.some((request) => request.id === requestId);

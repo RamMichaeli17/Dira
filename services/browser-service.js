@@ -5,37 +5,50 @@ const { puppeteerConfig } = require("../config/puppeteer-config");
 
 /**
  * Service for managing Puppeteer browser sessions.
- * Uses a Singleton pattern with auto-recovery for remote connections (Browserless).
+ * Supports switching between proxied and non-proxied connections to optimize costs.
  */
 class BrowserService {
   constructor() {
     /** @type {import('puppeteer').Browser | null} */
     this.browser = null;
     this.isExplicitlyClosing = false;
+    this.isCurrentlyUsingProxy = false; // Tracks current proxy state
   }
 
   /**
-   * Returns the existing browser instance or creates a new one if needed.
-   * @returns {Promise<import('puppeteer').Browser>} Puppeteer browser instance
+   * Returns the existing browser or creates a new one.
+   * If proxy requirement changes, it automatically reconnects.
+   * @param {boolean} useProxy - Whether to use the residential proxy
    * @private
    */
-  async _getBrowser() {
-    // Check if browser exists and is actively connected
+  async _getBrowser(useProxy = true) {
+    // If browser exists but proxy state differs, close it to switch modes
     if (this.browser && this.browser.isConnected()) {
-      return this.browser;
+      if (this.isCurrentlyUsingProxy === useProxy) {
+        return this.browser;
+      } else {
+        console.log(
+          `Switching proxy mode (Proxy needed: ${useProxy}). Reconnecting...`,
+        );
+        await this.close();
+      }
     }
 
     console.log("Establishing new browser connection...");
-    this.isExplicitlyClosing = false; // Reset flag on new connection
+    this.isExplicitlyClosing = false;
+    this.isCurrentlyUsingProxy = useProxy;
 
     try {
       if (process.env.USE_BROWSERLESS === "true") {
-        // Build the connection URL with Residential Proxy parameters for Israel and Government sites
-        const wsUrl = `wss://production-sfo.browserless.io?token=${process.env.BROWSERLESS_TOKEN}&proxy=residential&proxyCountry=il&proxyPreset=px_gov01`;
+        // Use proxy only when explicitly requested
+        const wsUrl = useProxy
+          ? `wss://production-sfo.browserless.io?token=${process.env.BROWSERLESS_TOKEN}&proxy=residential&proxyCountry=il&proxyPreset=px_gov01`
+          : `wss://production-sfo.browserless.io?token=${process.env.BROWSERLESS_TOKEN}`;
 
         console.log(
-          "Connecting to Browserless with Israeli Residential Proxy...",
+          `Connecting to Browserless ${useProxy ? "WITH Israeli Proxy..." : "(NO Proxy)..."}`,
         );
+
         this.browser = await puppeteer.connect({
           browserWSEndpoint: wsUrl,
         });
@@ -47,7 +60,7 @@ class BrowserService {
       this.browser.on("disconnected", () => {
         if (!this.isExplicitlyClosing) {
           console.warn(
-            "Browser disconnected unexpectedly. Resetting instance for next request...",
+            "Browser disconnected unexpectedly. Resetting instance...",
           );
         }
         this.browser = null;
@@ -61,17 +74,16 @@ class BrowserService {
   }
 
   /**
-   * Creates a new Puppeteer page (tab) using the single browser instance.
-   * @returns {Promise<import('puppeteer').Page>} New Puppeteer page instance
+   * Creates a new Puppeteer page.
+   * @param {boolean} useProxy - Default is true (for GovMap). Set to false for MOCH to save costs.
    */
-  async createNewPage() {
+  async createNewPage(useProxy = true) {
     try {
-      const browser = await this._getBrowser();
+      const browser = await this._getBrowser(useProxy);
       const page = await browser.newPage();
       return page;
     } catch (error) {
       console.error("Failed to create new page:", error);
-      // Auto-recovery mechanism: if page creation fails, force a reset for the next try
       this.browser = null;
       throw error;
     }

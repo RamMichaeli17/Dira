@@ -2,6 +2,10 @@
 
 const Redis = require("ioredis");
 
+/**
+ * Service for managing Redis cache operations.
+ * Handles automatic reconnections. Data is stored indefinitely.
+ */
 class RedisService {
   constructor() {
     this.client = new Redis(process.env.REDIS_URL, {
@@ -9,7 +13,7 @@ class RedisService {
       connectTimeout: 10000,
       // Keep connection alive
       keepAlive: 30000,
-      // Reconnect on error
+      // Reconnect on error with exponential backoff
       retryStrategy(times) {
         const delay = Math.min(times * 50, 2000);
         return delay;
@@ -26,9 +30,9 @@ class RedisService {
   }
 
   /**
-   * Get cached project data
-   * @param {string} projectNumber
-   * @returns {Promise<Object|null>} Cached data or null
+   * Retrieves cached project data.
+   * @param {string} projectNumber - The project identifier.
+   * @returns {Promise<Object|null>} Cached data or null if not found/error.
    */
   async getProjectData(projectNumber) {
     try {
@@ -36,17 +40,17 @@ class RedisService {
       return data ? JSON.parse(data) : null;
     } catch (error) {
       console.error("Redis get error:", error);
+      // Fallback to null so the application can proceed without cache
       return null;
     }
   }
 
   /**
-   * Cache project data
-   * @param {string} projectNumber
-   * @param {Object} data
-   * @param {number} ttl Time to live in seconds (default 7 days)
+   * Caches project data permanently (No expiration).
+   * @param {string} projectNumber - The project identifier.
+   * @param {Object} data - The map URLs and coordinates to cache.
    */
-  async setProjectData(projectNumber, data, ttl = 604800) {
+  async setProjectData(projectNumber, data) {
     try {
       await this.client.set(projectNumber, JSON.stringify(data));
     } catch (error) {
@@ -55,8 +59,8 @@ class RedisService {
   }
 
   /**
-   * Clear cached data for a project
-   * @param {string} projectNumber
+   * Manually removes cached data for a specific project.
+   * @param {string} projectNumber - The project identifier.
    */
   async clearProjectData(projectNumber) {
     try {
@@ -67,12 +71,12 @@ class RedisService {
   }
 
   /**
-   * Close Redis connection
+   * Gracefully closes the Redis connection during server shutdown.
    */
   async close() {
     try {
       await this.client.quit();
-      console.log("Redis connection closed");
+      console.log("Redis connection closed safely.");
     } catch (error) {
       console.error("Redis close error:", error);
     }
