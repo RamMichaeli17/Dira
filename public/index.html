@@ -1,30 +1,101 @@
+<!-- // E:\Dira\public\index.html -->
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Project Link Converter</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
   <div class="container">
-    <h1>Project Link Converter</h1>
-    <p>Enter a project URL or number below:</p>
-    <input type="text" id="projectInput" placeholder="Enter project URL or number..." />
-    <button id="convertButton">Convert</button>
-    <div class="loading" id="loading">
+    <h1></h1>
+    <div class="language-switcher">
+      <div class="custom-select">
+        <div class="select-trigger">
+          <img src="" alt="" class="flag-icon" />
+          <span class="selected-text"></span>
+          <span class="arrow"></span>
+        </div>
+        <div class="select-dropdown">
+          <div class="select-option" data-value="he">
+            <img src="israel-flag.png" alt="Israel Flag" class="flag-icon" />
+            <span>עברית</span>
+          </div>
+          <div class="select-option" data-value="en">
+            <img src="usa-flag.png" alt="USA Flag" class="flag-icon" />
+            <span>English</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p id="inputLabel"></p>
+    <input type="text" id="projectInput" placeholder="" />
+    <div class="button-container">
+      <button id="convertButton"></button>
+      <div class="cooldown-progress"></div>
+    </div>
+    <button id="cancelButton" style="display: none;"></button>
+
+    <!-- Loading Spinner -->
+    <div class="loading" id="loading" style="display: none;">
       <div class="spinner"></div>
       <p>Processing...</p>
     </div>
-    <div class="output" id="output"></div>
-    <div class="map-preview" id="mapPreview" style="display: none;">
-      <iframe id="govMapFrame" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" style="width:100%" height="320"></iframe>
+
+    <!-- Queue Status -->
+    <div id="queueStatus" class="queue-status" style="display: none;">
+      <div class="queue-info">
+        <div class="queue-position">
+          <span class="position-number">1</span>
+          <span class="position-text">Your position in queue</span>
+        </div>
+        <div class="queue-time">Estimated wait time:
+
+          < 1 minute</div>
+        </div>
+        <div class="queue-progress-bar">
+          <div class="progress-fill"></div>
+        </div>
+        <div class="queue-details">
+          <div class="total-requests">
+            Total requests in queue: <span class="requests-number">1</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Output -->
+      <div id="output" class="output"></div>
+
+      <!-- Map Sections -->
+      <div class="maps-container">
+        <!-- GovMap Section -->
+        <div id="mapPreview" class="map-section" style="display: none;">
+          <div class="map-heading">
+            <strong></strong>
+            <a href="" target="_blank" class="map-link"></a>
+          </div>
+          <div class="map-container">
+            <iframe id="govMapFrame" frameborder="0" scrolling="no" marginheight="0" marginwidth="0"></iframe>
+          </div>
+        </div>
+
+        <!-- Google Maps Section -->
+        <div id="googleMapPreview" class="map-section" style="display: none;">
+          <div class="map-heading">
+            <strong></strong>
+            <a href="" target="_blank" class="map-link"></a>
+          </div>
+          <div class="map-container">
+            <iframe id="googleMapFrame" frameborder="0" scrolling="no" marginheight="0" marginwidth="0"></iframe>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="map-preview" id="googleMapPreview" style="display: none;">
-      <iframe id="googleMapFrame" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" style="width:100%" height="320"></iframe>
-    </div>
-  </div>
-  <footer>&copy; 2025 Project Converter Tool</footer>
-  <script src="script.js"></script>
+    <footer></footer>
+    <script type="module" src="script.js"></script>
 </body>
+
 </html>

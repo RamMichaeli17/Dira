@@ -1,81 +1,275 @@
-// פונקציה שמתחילה את תהליך החיפוש
+// public/script.js
+
+import { uiUtils, buttonUtils } from "./utils.js";
+import { requestState } from "./stateUtils.js";
+import { languageUtils } from "./languageUtils.js";
+
+let abortController = null;
+
+/**
+ * Handles the language switching logic and triggers a page reload with animation.
+ * @param {string} lang - The language code to switch to (e.g., 'he' or 'en').
+ */
+const handleLanguageChange = (lang) => {
+  const currentLang = languageUtils.getCurrentLanguage();
+  if (lang === currentLang) {
+    const select = document.querySelector(".custom-select");
+    select.classList.remove("open");
+    return;
+  }
+
+  // Prevent multiple page reloads/animations
+  if (document.body.classList.contains("language-changing")) return;
+
+  document.body.classList.add("language-changing");
+
+  const loadingOverlay = document.createElement("div");
+  loadingOverlay.className = "page-reload";
+  loadingOverlay.innerHTML = '<div class="reload-spinner"></div>';
+  document.body.appendChild(loadingOverlay);
+
+  // Trigger animation
+  setTimeout(() => {
+    loadingOverlay.classList.add("active");
+  }, 0);
+
+  // Set language and update UI immediately
+  languageUtils.setLanguage(lang);
+  document.documentElement.dir = lang === "he" ? "rtl" : "ltr";
+
+  // Close dropdown
+  const select = document.querySelector(".custom-select");
+  select.classList.remove("open");
+
+  // Reload page after animation
+  setTimeout(() => {
+    location.reload();
+  }, 400);
+};
+
+/**
+ * Validates the user's project input.
+ * Accepts either a 3-5 digit project number or a valid dira.moch.gov.il URL.
+ * @param {string} input - The raw user input string.
+ * @returns {boolean} - True if the input is valid, false otherwise.
+ */
+const validateInput = (input) => {
+  const trimmedInput = input.trim();
+
+  // Check for 3-5 digit numbers
+  const isValidNumber = /^\d{3,5}$/.test(trimmedInput);
+
+  // Check for valid URL (made 'www.' optional)
+  const isValidUrl = /^https?:\/\/(www\.)?dira\.moch\.gov\.il/.test(
+    trimmedInput,
+  );
+
+  return isValidNumber || isValidUrl;
+};
+
+/**
+ * Initiates the conversion process, handles the API request to the backend,
+ * and manages UI states (loading, errors, results).
+ */
 const startConversion = async () => {
   const projectInput = document.getElementById("projectInput").value.trim();
 
   if (!projectInput) {
-    alert("Please enter a valid URL or project number.");
+    uiUtils.showError("projectRequired");
     return;
   }
 
-  // Extract project number from URL if necessary
-  let projectNumber = projectInput;
-  const urlMatch = projectInput.match(/\d+/); // מחפש מספר בתוך ה-URL
-  if (urlMatch) {
-    projectNumber = urlMatch[0]; // לוקח רק את המספר
+  if (!validateInput(projectInput)) {
+    uiUtils.showError("invalidInput");
+    return;
   }
 
-  // Display loading spinner
-  const loadingDiv = document.getElementById("loading");
-  const outputDiv = document.getElementById("output");
-  const govMapPreviewDiv = document.getElementById("mapPreview");
-  const googleMapPreviewDiv = document.getElementById("googleMapPreview");
-  const govMapFrame = document.getElementById("govMapFrame");
-  const googleMapFrame = document.getElementById("googleMapFrame");
-  loadingDiv.style.display = "block";
-  outputDiv.innerHTML = "";
-  govMapPreviewDiv.style.display = "none";
-  googleMapPreviewDiv.style.display = "none";
+  buttonUtils.updateButtonStates(true);
+  uiUtils.showLoading();
+  uiUtils.hideError();
+
+  if (abortController) {
+    await cancelConversion();
+  }
+  abortController = new AbortController();
+  requestState.setCurrentRequestId(Date.now().toString());
 
   try {
     const response = await fetch("/convert", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "X-Request-ID": requestState.getCurrentRequestId(),
       },
-      body: JSON.stringify({ projectInput: projectNumber }),
+      body: JSON.stringify({ projectInput }),
+      signal: abortController.signal,
     });
 
     const data = await response.json();
 
-    if (data.googleMapsUrl && data.updatedUrl) {
-      outputDiv.innerHTML = `
-        <p><strong>Updated URL:</strong></p>
-        <a href="${data.updatedUrl}" target="_blank">${data.updatedUrl}</a>
-        <p><strong>Google Maps URL:</strong></p>
-        <a href="${data.googleMapsUrl}" target="_blank">${data.googleMapsUrl}</a>
-      `;
-
-      // Update gov map preview
-      const govMapUrl = `https://www.govmap.gov.il/map.html?lay=Matara_MItham,Matara_Mig&bs=Matara_MItham|ACTIVEPROJECTID~${projectNumber}`;
-      govMapFrame.src = govMapUrl;
-      govMapPreviewDiv.style.display = "block";
-      
-      // Update Google Maps preview
-      const googleMapsMatch = data.googleMapsUrl.match(/place\/(-?\d+\.\d+),(-?\d+\.\d+)/);
-      if (googleMapsMatch) {
-        const lat = googleMapsMatch[1];
-        const lng = googleMapsMatch[2];
-        const googleMapsEmbedUrl = `https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d4063.3509927002774!2d${lng}!3d${lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zMzHCsDQwJzA5LjQiTiAzNMKwMzUnNDguMCJF!5e1!3m2!1sen!2sil`;
-        googleMapFrame.src = googleMapsEmbedUrl;
-        googleMapPreviewDiv.style.display = "block";
-      }
-    } else {
-      outputDiv.innerHTML = `<p>Error: ${data.error}</p>`;
+    if (data.error) {
+      uiUtils.showError(data.error);
+    } else if (data.requestId === requestState.getCurrentRequestId()) {
+      uiUtils.displayResults(data);
     }
   } catch (error) {
-    console.error("Error:", error);
-    outputDiv.innerHTML = `<p>An error occurred.</p>`;
+    if (!abortController.signal.aborted) {
+      console.log(error);
+      uiUtils.showError("processingError");
+    }
   } finally {
-    loadingDiv.style.display = "none"; // Hide loading spinner after completion
+    if (abortController.signal.aborted) {
+      uiUtils.showError("requestCanceled");
+    }
+    uiUtils.hideLoading();
+    buttonUtils.updateButtonStates(false);
+    abortController = null;
   }
 };
 
-// לחיצה על כפתור ההמרה
-document.getElementById("convertButton").addEventListener("click", startConversion);
+/**
+ * Polls the server periodically to update the user's current position in the queue.
+ */
+const updateQueueStatus = async () => {
+  if (!requestState.getCurrentRequestId()) {
+    return;
+  }
 
-// לחיצה על Enter בתיבת הטקסט
+  try {
+    const response = await fetch("/queue-status", {
+      headers: { "X-Request-ID": requestState.getCurrentRequestId() },
+    });
+    const data = await response.json();
+
+    if (requestState.getCurrentRequestId()) {
+      const isFirstInQueue =
+        data.currentRequestId === requestState.getCurrentRequestId();
+      uiUtils.updateQueueDisplay(data.queueLength, isFirstInQueue);
+
+      if (!isFirstInQueue && data.queueLength > 0) {
+        setTimeout(updateQueueStatus, 1000);
+      }
+    }
+  } catch (error) {
+    console.error("Queue status error:", error);
+  }
+};
+
+/**
+ * Cancels the ongoing conversion request both on the client and server sides.
+ */
+const cancelConversion = async () => {
+  if (abortController) {
+    abortController.abort();
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("queueStatus").style.display = "none";
+
+    try {
+      const response = await fetch("/cancel", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Request-ID": requestState.getCurrentRequestId(),
+        },
+      });
+
+      if (response.ok) {
+        requestState.clearCurrentRequestId();
+        uiUtils.showError("requestCanceled");
+        buttonUtils.startCooldown();
+      }
+    } catch (error) {
+      console.error("Cancel error:", error);
+    }
+  }
+};
+
+// --- Event Listeners ---
+
+document.getElementById("convertButton").addEventListener("click", () => {
+  startConversion();
+  setTimeout(updateQueueStatus, 300);
+});
+
+document.getElementById("cancelButton").addEventListener("click", async () => {
+  await cancelConversion();
+});
+
 document.getElementById("projectInput").addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
-    startConversion();
+    const convertButton = document.getElementById("convertButton");
+    if (!convertButton.disabled) {
+      startConversion();
+      setTimeout(updateQueueStatus, 300);
+    }
   }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.body.classList.add("loaded");
+
+  const initialLoadOverlay = document.createElement("div");
+  initialLoadOverlay.className = "page-reload initial-load active";
+  initialLoadOverlay.innerHTML = '<div class="reload-spinner"></div>';
+  document.body.appendChild(initialLoadOverlay);
+
+  setTimeout(() => {
+    initialLoadOverlay.classList.remove("active");
+    setTimeout(() => {
+      initialLoadOverlay.remove();
+    }, 300);
+  }, 500);
+
+  const select = document.querySelector(".custom-select");
+  const trigger = select.querySelector(".select-trigger");
+  const options = select.querySelectorAll(".select-option");
+  const selectedText = select.querySelector(".selected-text");
+  const triggerFlag = trigger.querySelector(".flag-icon");
+  const languageSwitcher = document.querySelector(".language-switcher");
+
+  // Set initial language and direction
+  const savedLang = localStorage.getItem("preferredLanguage") || "he";
+  document.documentElement.dir = savedLang === "he" ? "rtl" : "ltr";
+
+  // Initialize language
+  languageUtils.setLanguage(savedLang);
+
+  // Set correct position before showing
+  setTimeout(() => {
+    languageSwitcher.classList.add("loaded");
+  }, 0);
+
+  // Set initial selection
+  const initialOption = Array.from(options).find(
+    (opt) => opt.dataset.value === savedLang,
+  );
+
+  if (initialOption) {
+    selectedText.textContent = initialOption.querySelector("span").textContent;
+    triggerFlag.src = initialOption.querySelector(".flag-icon").src;
+    triggerFlag.alt = initialOption.querySelector(".flag-icon").alt;
+  }
+
+  // Toggle dropdown
+  trigger.addEventListener("click", () => {
+    select.classList.toggle("open");
+  });
+
+  // Handle option selection
+  options.forEach((option) => {
+    option.addEventListener("click", () => {
+      const value = option.dataset.value;
+      handleLanguageChange(value);
+    });
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener("click", (e) => {
+    if (!select.contains(e.target)) {
+      select.classList.remove("open");
+    }
+  });
+
+  // Update texts immediately
+  languageUtils.updateTexts();
 });
