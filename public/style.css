@@ -17,6 +17,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh; /* פותר את בעיית הגלילה עם שורת הכתובת בטלפון */
 }
 
 body.loaded {
@@ -586,10 +587,10 @@ footer {
   }
 
   .container {
-    margin-top: 5vh;
-    padding: 30px 15px;
+    margin: 10px auto 20px auto; /* ביטלנו את ה-5vh למעלה ואת ה-50px למטה שגרמו לגלילה */
+    padding: 25px 15px;
     width: 95%;
-    min-height: 250px;
+    min-height: auto;
   }
 
   .error-message {
