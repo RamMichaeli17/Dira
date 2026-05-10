@@ -12,6 +12,7 @@ let abortController = null;
  */
 const handleLanguageChange = (lang) => {
   const currentLang = languageUtils.getCurrentLanguage();
+
   if (lang === currentLang) {
     const select = document.querySelector(".custom-select");
     select.classList.remove("open");
@@ -114,7 +115,7 @@ const startConversion = async () => {
     }
   } catch (error) {
     if (!abortController.signal.aborted) {
-      console.log(error);
+      console.error(error);
       uiUtils.showError("processingError");
     }
   } finally {
@@ -139,11 +140,13 @@ const updateQueueStatus = async () => {
     const response = await fetch("/queue-status", {
       headers: { "X-Request-ID": requestState.getCurrentRequestId() },
     });
+
     const data = await response.json();
 
     if (requestState.getCurrentRequestId()) {
       const isFirstInQueue =
         data.currentRequestId === requestState.getCurrentRequestId();
+
       uiUtils.updateQueueDisplay(data.queueLength, isFirstInQueue);
 
       if (!isFirstInQueue && data.queueLength > 0) {
@@ -223,9 +226,8 @@ document.getElementById("aiInsightBtn").addEventListener("click", (event) => {
     aiUtils.fetchAIInsights(projectInput, lat, lng);
   } else {
     console.warn("Coordinate data missing from cached instance.");
-    alert(
-      "Location data is unavailable for this project. Please clear the cache or try another project.",
-    );
+    // Localized alert replacing the hardcoded English one
+    alert(languageUtils.getText("errorMessages.geoServiceError"));
   }
 });
 

@@ -58,7 +58,6 @@ export const uiUtils = {
   hideError: () => {
     const outputDiv = document.getElementById("output");
     const errorContainer = outputDiv.querySelector(".error-container");
-
     if (errorContainer) {
       errorContainer.remove();
     }
@@ -102,6 +101,7 @@ export const uiUtils = {
   addIframeLoadingPlaceholder: (mapSection, iframe, src) => {
     const loadingOverlay = document.createElement("div");
     loadingOverlay.className = "iframe-loading-overlay";
+
     loadingOverlay.innerHTML = `
       <div class="iframe-spinner">
         <div class="spinner"></div>
@@ -137,7 +137,7 @@ export const uiUtils = {
     iframe.onerror = () => {
       loadingOverlay.innerHTML = `
         <div class="iframe-error">
-          <p>Failed to load map</p>
+          <p>${languageUtils.getText("errorMessages.processingError")}</p>
         </div>
       `;
       console.error("Failed to load map iframe");
@@ -311,6 +311,12 @@ export const buttonUtils = {
  * Utility functions for handling the AI Neighborhood Insights feature.
  */
 export const aiUtils = {
+  /**
+   * Fetches the neighborhood insights from the backend AI service.
+   * @param {string} projectInput - The original project ID/URL entered by the user.
+   * @param {string} lat - Latitude of the project.
+   * @param {string} lng - Longitude of the project.
+   */
   async fetchAIInsights(projectInput, lat, lng) {
     const modal = document.getElementById("aiModal");
     const loader = document.getElementById("aiLoader");
@@ -341,19 +347,37 @@ export const aiUtils = {
     } catch (error) {
       console.error("Error fetching AI data:", error);
       loader.style.display = "none";
-      resultsContainer.innerHTML = `<div class="error-message">אירעה שגיאה בטעינת הנתונים. אנא נסה שוב מאוחר יותר.</div>`;
+      resultsContainer.innerHTML = `<div class="error-message">${languageUtils.getText("errorMessages.aiError")}</div>`;
       resultsContainer.style.display = "block";
     }
   },
 
+  /**
+   * Renders the structured AI response into the modal.
+   * Uses translations for section headers to support i18n.
+   * @param {Object} data - The JSON object returned by the AI service.
+   */
   renderAIResults(data) {
     const resultsContainer = document.getElementById("aiResults");
 
+    // Dynamic section titles based on the selected language
     const sections = [
-      { title: "📌 תקציר", content: data.summary },
-      { title: "🎓 חינוך", content: data.education },
-      { title: "🚆 תחבורה", content: data.transportation },
-      { title: "🏗️ פיתוח עתידי", content: data.futureDevelopment },
+      {
+        title: languageUtils.getText("aiSections.summary"),
+        content: data.summary,
+      },
+      {
+        title: languageUtils.getText("aiSections.education"),
+        content: data.education,
+      },
+      {
+        title: languageUtils.getText("aiSections.transportation"),
+        content: data.transportation,
+      },
+      {
+        title: languageUtils.getText("aiSections.future"),
+        content: data.futureDevelopment,
+      },
     ];
 
     let htmlContent = "";
@@ -369,10 +393,30 @@ export const aiUtils = {
       }
     });
 
+    // Optional: Add a Madlan Link button if a URL is provided by the AI
+    if (data.madlanUrl) {
+      // We check the language to determine the direction and text of the button
+      const isHebrew = languageUtils.getCurrentLanguage() === "he";
+      const btnText = isHebrew
+        ? "🏠 צפה בנתוני השכונה המלאים במדלן"
+        : "🏠 View full neighborhood data on Madlan";
+
+      htmlContent += `
+        <div style="margin-top: 20px; text-align: center;">
+          <a href="${data.madlanUrl}" target="_blank" class="madlan-btn" style="background: #ff5a5f; color: white; padding: 10px 20px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 500; transition: background 0.2s;">
+            ${btnText}
+          </a>
+        </div>
+      `;
+    }
+
     resultsContainer.innerHTML = htmlContent;
     resultsContainer.style.display = "block";
   },
 
+  /**
+   * Closes the AI Modal popup.
+   */
   closeModal() {
     document.getElementById("aiModal").style.display = "none";
   },

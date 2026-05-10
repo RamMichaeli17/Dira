@@ -12,6 +12,7 @@
 <body>
   <div class="container">
     <h1></h1>
+
     <div class="language-switcher">
       <div class="custom-select">
         <div class="select-trigger">
@@ -31,54 +32,50 @@
         </div>
       </div>
     </div>
+
     <p id="inputLabel"></p>
     <input type="text" id="projectInput" placeholder="" />
+
     <div class="button-container">
       <button id="convertButton"></button>
       <div class="cooldown-progress"></div>
     </div>
     <button id="cancelButton" style="display: none;"></button>
 
-    <!-- Loading Spinner -->
     <div class="loading" id="loading" style="display: none;">
       <div class="spinner"></div>
-      <p>Processing...</p>
+      <p id="processingText"></p>
     </div>
 
-    <!-- Queue Status -->
     <div id="queueStatus" class="queue-status" style="display: none;">
       <div class="queue-info">
         <div class="queue-position">
           <span class="position-number">1</span>
-          <span class="position-text">Your position in queue</span>
+          <span class="position-text" id="queuePositionText"></span>
         </div>
-        <div class="queue-time">Estimated wait time:
+        <div class="queue-time">
+          <span id="estimatedWaitText"></span>
 
-          < 1 minute</div>
-        </div>
-        <div class="queue-progress-bar">
-          <div class="progress-fill"></div>
-        </div>
-        <div class="queue-details">
-          <div class="total-requests">
-            Total requests in queue: <span class="requests-number">1</span>
-          </div>
+          < 1 minute </div>
+            <div class="queue-progress-bar">
+              <div class="progress-fill"></div>
+            </div>
+            <div class="queue-details">
+              <div class="total-requests">
+                <span id="totalRequestsText"></span> <span class="requests-number">1</span>
+              </div>
+            </div>
         </div>
       </div>
 
-      <!-- Results Output -->
       <div id="output" class="output"></div>
 
-      <!-- AI Insight Button -->
       <div class="ai-button-container" style="text-align: center; margin: 15px 0;">
         <button id="aiInsightBtn" class="ai-btn" style="display: none;">
-          ✨ נתח את סביבת הפרויקט עם AI
         </button>
       </div>
 
-      <!-- Map Sections -->
       <div class="maps-container">
-        <!-- GovMap Section -->
         <div id="mapPreview" class="map-section" style="display: none;">
           <div class="map-heading">
             <strong></strong>
@@ -89,7 +86,6 @@
           </div>
         </div>
 
-        <!-- Google Maps Section -->
         <div id="googleMapPreview" class="map-section" style="display: none;">
           <div class="map-heading">
             <strong></strong>
@@ -101,24 +97,24 @@
         </div>
       </div>
     </div>
+
     <footer></footer>
 
-    <!-- AI Modal (Popup) -->
     <div id="aiModal" class="ai-modal" style="display: none;">
       <div class="ai-modal-content">
         <span class="close-ai-btn">&times;</span>
+
         <div class="ai-modal-header">
-          <h3>✨ ניתוח סביבתי חכם</h3>
-          <p id="aiProjectTitle">מבוסס על סריקת רשת בזמן אמת</p>
+          <h3 id="aiModalTitle"></h3>
+          <p id="aiModalSubtitle"></p>
         </div>
 
         <div id="aiLoader" class="ai-loader" style="display: none;">
           <div class="spinner"></div>
-          <p>ה-AI שלנו סורק את האינטרנט ומנתח את האזור...</p>
+          <p id="aiLoaderText"></p>
         </div>
 
         <div id="aiResults" class="ai-results" style="display: none;">
-          <!-- התוצאות יוזרקו לכאן דינמית -->
         </div>
       </div>
     </div>
