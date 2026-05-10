@@ -1,6 +1,6 @@
 // public/script.js
 
-import { uiUtils, buttonUtils } from "./utils.js";
+import { uiUtils, buttonUtils, aiUtils } from "./utils.js";
 import { requestState } from "./stateUtils.js";
 import { languageUtils } from "./languageUtils.js";
 
@@ -202,6 +202,42 @@ document.getElementById("projectInput").addEventListener("keydown", (event) => {
       startConversion();
       setTimeout(updateQueueStatus, 300);
     }
+  }
+});
+
+// AI Modal Event Listeners
+document.getElementById("aiInsightBtn").addEventListener("click", (event) => {
+  const projectInput = document.getElementById("projectInput").value.trim();
+
+  const clickedBtn = event.currentTarget;
+  const lat = clickedBtn.dataset.lat;
+  const lng = clickedBtn.dataset.lng;
+
+  if (
+    projectInput &&
+    lat &&
+    lng &&
+    lat !== "undefined" &&
+    lng !== "undefined"
+  ) {
+    aiUtils.fetchAIInsights(projectInput, lat, lng);
+  } else {
+    console.warn("Coordinate data missing from cached instance.");
+    alert(
+      "Location data is unavailable for this project. Please clear the cache or try another project.",
+    );
+  }
+});
+
+document.querySelector(".close-ai-btn").addEventListener("click", () => {
+  aiUtils.closeModal();
+});
+
+// Close modal when clicking outside of it
+window.addEventListener("click", (event) => {
+  const modal = document.getElementById("aiModal");
+  if (event.target === modal) {
+    aiUtils.closeModal();
   }
 });
 

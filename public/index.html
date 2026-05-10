@@ -69,6 +69,13 @@
       <!-- Results Output -->
       <div id="output" class="output"></div>
 
+      <!-- AI Insight Button -->
+      <div class="ai-button-container" style="text-align: center; margin: 15px 0;">
+        <button id="aiInsightBtn" class="ai-btn" style="display: none;">
+          ✨ נתח את סביבת הפרויקט עם AI
+        </button>
+      </div>
+
       <!-- Map Sections -->
       <div class="maps-container">
         <!-- GovMap Section -->
@@ -95,6 +102,27 @@
       </div>
     </div>
     <footer></footer>
+
+    <!-- AI Modal (Popup) -->
+    <div id="aiModal" class="ai-modal" style="display: none;">
+      <div class="ai-modal-content">
+        <span class="close-ai-btn">&times;</span>
+        <div class="ai-modal-header">
+          <h3>✨ ניתוח סביבתי חכם</h3>
+          <p id="aiProjectTitle">מבוסס על סריקת רשת בזמן אמת</p>
+        </div>
+
+        <div id="aiLoader" class="ai-loader" style="display: none;">
+          <div class="spinner"></div>
+          <p>ה-AI שלנו סורק את האינטרנט ומנתח את האזור...</p>
+        </div>
+
+        <div id="aiResults" class="ai-results" style="display: none;">
+          <!-- התוצאות יוזרקו לכאן דינמית -->
+        </div>
+      </div>
+    </div>
+
     <script type="module" src="script.js"></script>
 </body>
 

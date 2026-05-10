@@ -618,3 +618,136 @@ footer {
 [dir="rtl"] input[type="text"] {
   text-align: center;
 }
+
+/* =========================================
+   AI Insights Modal & Button
+   ========================================= */
+.ai-btn {
+  background: linear-gradient(135deg, #2d89ef, #a777e3);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+  margin: 20px auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: auto; /* Overrides the global button width */
+  max-width: 100%;
+}
+
+.ai-btn:hover {
+  transform: translateY(-2px);
+  background-color: transparent; /* Allows gradient to stay active */
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.ai-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  backdrop-filter: blur(4px);
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s;
+}
+
+.ai-modal.hidden,
+.ai-btn.hidden,
+.ai-loader.hidden,
+.ai-results.hidden {
+  display: none !important;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.ai-modal-content {
+  background-color: #fff;
+  width: 90%;
+  max-width: 600px;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  position: relative;
+  text-align: start; /* Supports both RTL and LTR smoothly */
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.close-ai-btn {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  font-size: 28px;
+  font-weight: bold;
+  color: #999;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+[dir="rtl"] .close-ai-btn {
+  right: auto;
+  left: 20px;
+}
+
+.close-ai-btn:hover {
+  color: #333;
+}
+
+.ai-modal-header h3 {
+  margin: 0 0 5px 0;
+  color: #2d89ef;
+  font-size: 22px;
+}
+
+.ai-modal-header p {
+  margin: 0 0 20px 0;
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+/* AI Results Cards */
+.ai-section {
+  background-color: #f8f9fa;
+  border-inline-start: 4px solid #a777e3;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+}
+
+.ai-section h4 {
+  margin: 0 0 8px 0;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-section p {
+  margin: 0;
+  color: #555;
+  line-height: 1.6;
+  font-size: 15px;
+}
+
+.ai-loader {
+  text-align: center;
+  padding: 30px 0;
+}

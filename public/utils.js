@@ -16,6 +16,7 @@ export const uiUtils = {
     document.getElementById("output").innerHTML = "";
     document.getElementById("mapPreview").style.display = "none";
     document.getElementById("googleMapPreview").style.display = "none";
+    document.getElementById("aiInsightBtn").style.display = "none";
   },
 
   /**
@@ -208,6 +209,45 @@ export const uiUtils = {
       const direction = currentLang === "he" ? "rtl" : "ltr";
       govMapSection.querySelector(".map-heading").dir = direction;
       googleMapSection.querySelector(".map-heading").dir = direction;
+
+      // === Bulletproof Coordinate Extraction ===
+      let lat = null;
+      let lng = null;
+
+      // Regex to find two decimal numbers separated by a comma (standard GPS format)
+      const coordRegex = /(-?\d{1,3}\.\d+),\s*(-?\d{1,3}\.\d+)/;
+
+      // 1. Try to extract from the main Google Maps URL
+      if (data.googleMapsUrl) {
+        const match = data.googleMapsUrl.match(coordRegex);
+        if (match) {
+          lat = match[1];
+          lng = match[2];
+        }
+      }
+
+      // 2. Fallback: Try to extract from the iframe URL if the first one failed
+      if ((!lat || !lng) && data.googleMapsIframeUrl) {
+        const match = data.googleMapsIframeUrl.match(coordRegex);
+        if (match) {
+          lat = match[1];
+          lng = match[2];
+        }
+      }
+
+      // Debugging log so we can see exactly what is happening in the console
+      console.log("Extraction Results:", { lat, lng, rawData: data });
+
+      const aiBtn = document.getElementById("aiInsightBtn");
+
+      if (lat && lng) {
+        aiBtn.dataset.lat = lat;
+        aiBtn.dataset.lng = lng;
+        aiBtn.style.display = "inline-flex";
+      } else {
+        console.warn("Missing coordinates. AI button hidden.");
+        aiBtn.style.display = "none";
+      }
     } else {
       outputDiv.innerHTML = `<div class="error-message">${languageUtils.getText("errorMessages.processingError")}</div>`;
     }
@@ -264,5 +304,76 @@ export const buttonUtils = {
       convertButton.classList.remove("cooldown-active");
       progressBar.style.animation = "none";
     }, cooldownDuration);
+  },
+};
+
+/**
+ * Utility functions for handling the AI Neighborhood Insights feature.
+ */
+export const aiUtils = {
+  async fetchAIInsights(projectInput, lat, lng) {
+    const modal = document.getElementById("aiModal");
+    const loader = document.getElementById("aiLoader");
+    const resultsContainer = document.getElementById("aiResults");
+
+    modal.style.display = "flex";
+    loader.style.display = "block";
+    resultsContainer.style.display = "none";
+    resultsContainer.innerHTML = "";
+
+    try {
+      const response = await fetch("/api/ai/neighborhood", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ locationDetails: projectInput, lat, lng }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch AI insights");
+      }
+
+      const aiData = await response.json();
+
+      loader.style.display = "none";
+      this.renderAIResults(aiData);
+    } catch (error) {
+      console.error("Error fetching AI data:", error);
+      loader.style.display = "none";
+      resultsContainer.innerHTML = `<div class="error-message">אירעה שגיאה בטעינת הנתונים. אנא נסה שוב מאוחר יותר.</div>`;
+      resultsContainer.style.display = "block";
+    }
+  },
+
+  renderAIResults(data) {
+    const resultsContainer = document.getElementById("aiResults");
+
+    const sections = [
+      { title: "📌 תקציר", content: data.summary },
+      { title: "🎓 חינוך", content: data.education },
+      { title: "🚆 תחבורה", content: data.transportation },
+      { title: "🏗️ פיתוח עתידי", content: data.futureDevelopment },
+    ];
+
+    let htmlContent = "";
+
+    sections.forEach((section) => {
+      if (section.content) {
+        htmlContent += `
+          <div class="ai-section">
+            <h4>${section.title}</h4>
+            <p>${section.content}</p>
+          </div>
+        `;
+      }
+    });
+
+    resultsContainer.innerHTML = htmlContent;
+    resultsContainer.style.display = "block";
+  },
+
+  closeModal() {
+    document.getElementById("aiModal").style.display = "none";
   },
 };
