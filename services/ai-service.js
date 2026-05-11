@@ -34,8 +34,9 @@ class AIService {
   async getNeighborhoodInfo(displayName, retries = 3) {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
+        const aiModelName = process.env.GEMINI_MODEL || "gemini-2.5-flash";
         const model = this.genAI.getGenerativeModel({
-          model: "gemini-2.5-flash",
+          model: aiModelName,
           tools: [{ googleSearch: {} }],
           // יצירתיות מאוזנת: מאפשרת הסקה מרחוב לשכונה, אך שומרת על עקביות.
           generationConfig: {

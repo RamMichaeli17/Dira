@@ -312,7 +312,15 @@ export const buttonUtils = {
  */
 export const aiUtils = {
   /**
-   * Fetches the neighborhood insights from the backend AI service.
+   * Local in-memory cache to store AI results per project.
+   * Persists only until the page is reloaded.
+   * Key: projectInput (URL or ID), Value: AI JSON data.
+   * @type {Object.<string, Object>}
+   */
+  insightsCache: {},
+
+  /**
+   * Fetches the neighborhood insights from the backend AI service or local memory.
    * @param {string} projectInput - The original project ID/URL entered by the user.
    * @param {string} lat - Latitude of the project.
    * @param {string} lng - Longitude of the project.
@@ -323,6 +331,14 @@ export const aiUtils = {
     const resultsContainer = document.getElementById("aiResults");
 
     modal.style.display = "flex";
+
+    if (this.insightsCache[projectInput]) {
+      console.log(`[AI Cache] Hit for project: ${projectInput}`);
+      loader.style.display = "none";
+      this.renderAIResults(this.insightsCache[projectInput]);
+      return; // יוצא מהפונקציה, אין צורך בבקשת רשת!
+    }
+
     loader.style.display = "block";
     resultsContainer.style.display = "none";
     resultsContainer.innerHTML = "";
@@ -341,6 +357,8 @@ export const aiUtils = {
       }
 
       const aiData = await response.json();
+
+      this.insightsCache[projectInput] = aiData;
 
       loader.style.display = "none";
       this.renderAIResults(aiData);
