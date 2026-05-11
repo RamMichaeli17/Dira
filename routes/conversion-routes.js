@@ -100,9 +100,6 @@ router.post("/convert", async (req, res) => {
 
     // If data was found in cache, return immediately (No need to queue!)
     if (cacheResult.fromCache) {
-      console.log(
-        `Cache hit for project ${req.body.projectInput} - returning immediately.`,
-      );
       return res.json({
         ...cacheResult.data,
         requestId: requestId,

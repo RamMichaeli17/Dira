@@ -34,7 +34,8 @@ class AIService {
   async getNeighborhoodInfo(displayName, retries = 3) {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
-        const aiModelName = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+        const aiModelName =
+          process.env.GEMINI_SEARCH_MODEL || "gemini-2.5-flash";
         const model = this.genAI.getGenerativeModel({
           model: aiModelName,
           tools: [{ googleSearch: {} }],
@@ -110,7 +111,8 @@ class AIService {
   async translateNeighborhoodData(hebrewData, retries = 2) {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
-        const aiModelName = "gemini-3.1-flash-lite";
+        const aiModelName =
+          process.env.GEMINI_TRANSLATION_MODEL || "gemini-3.1-flash-lite";
         const model = this.genAI.getGenerativeModel({
           model: aiModelName,
           generationConfig: {
