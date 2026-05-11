@@ -3,7 +3,7 @@
 /**
  * @fileoverview Dictionary containing all localized strings for the application.
  * Supports English ('en') and Hebrew ('he') for internationalization (i18n).
- * * @type {Object}
+ * @type {Object}
  */
 export const translations = {
   en: {
@@ -43,6 +43,8 @@ export const translations = {
         "An error occurred while loading AI data. Please try again later.",
       geoServiceError:
         "Could not identify project location. AI analysis unavailable.",
+      tooManyRequests:
+        "You have sent too many requests. Please wait a few minutes and try again.",
     },
 
     mapLabels: {
@@ -88,6 +90,7 @@ export const translations = {
       aiError: "אירעה שגיאה בטעינת נתוני ה-AI. אנא נסה שוב מאוחר יותר.",
       geoServiceError:
         "לא ניתן היה לזהות את מיקום הפרויקט. ניתוח AI אינו זמין.",
+      tooManyRequests: "שלחת יותר מדי בקשות. אנא המתן מספר דקות ונסה שוב.",
     },
 
     mapLabels: {

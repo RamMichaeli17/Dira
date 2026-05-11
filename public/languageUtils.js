@@ -6,6 +6,10 @@ import { translations } from "./translations.js";
  * Utility object for handling application internationalization (i18n).
  */
 export const languageUtils = {
+  /**
+   * The currently active language code.
+   * @type {string}
+   */
   currentLang: localStorage.getItem("preferredLanguage") || "he",
 
   /**
@@ -30,27 +34,38 @@ export const languageUtils = {
 
   /**
    * Retrieves a translated string based on a dot-notated key.
-   * Supports nested objects (e.g., 'errorMessages.invalidInput').
-   * @param {string} key - The dot-notated key.
-   * @returns {string} The translated string, or the key itself if not found.
+   * Features a fallback mechanism to prevent raw error keys from being displayed to users.
+   * @param {string} key - The dot-notated key (e.g., 'errorMessages.invalidInput').
+   * @returns {string} The translated string or a generic fallback.
    */
   getText(key) {
     const keys = key.split(".");
     let value = translations[this.currentLang];
+
     for (const k of keys) {
       if (value === undefined) break;
       value = value[k];
     }
 
-    return value || key;
+    if (typeof value === "string") {
+      return value;
+    }
+
+    if (key.startsWith("errorMessages.")) {
+      console.warn(
+        `[i18n] Missing translation for error: ${key}. Falling back to default processingError.`,
+      );
+      return translations[this.currentLang].errorMessages.processingError;
+    }
+
+    console.warn(`[i18n] Missing translation for key: ${key}`);
+    return key;
   },
 
   /**
    * Updates all relevant static DOM elements with translations for the current language.
-   * Note: Dynamic elements (like AI results or active error messages) are handled in utils.js.
    */
   updateTexts() {
-    // --- Main UI Elements ---
     document.title = this.getText("title");
 
     const h1 = document.querySelector("h1");

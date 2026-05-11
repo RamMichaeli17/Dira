@@ -73,22 +73,25 @@ export const uiUtils = {
     const loadingDiv = document.getElementById("loading");
 
     queueStatusDiv.style.display = "none";
-    loadingDiv.style.display = "none";
 
-    if (queueLength > 0 && requestState.getCurrentRequestId()) {
-      if (isFirstInQueue) {
-        loadingDiv.style.display = "block";
-      } else {
-        queueStatusDiv.innerHTML = `
-          <div class="queue-message">${languageUtils.getText("requestInQueue")}</div>
-          <div class="queue-dots">
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-          </div>
-        `;
-        queueStatusDiv.style.display = "block";
-      }
+    if (!requestState.getCurrentRequestId()) {
+      loadingDiv.style.display = "none";
+      return;
+    }
+
+    if (queueLength > 0 && !isFirstInQueue) {
+      loadingDiv.style.display = "none";
+      queueStatusDiv.innerHTML = `
+        <div class="queue-message">${languageUtils.getText("requestInQueue")}</div>
+        <div class="queue-dots">
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+        </div>
+      `;
+      queueStatusDiv.style.display = "block";
+    } else {
+      loadingDiv.style.display = "block";
     }
   },
 
@@ -210,14 +213,11 @@ export const uiUtils = {
       govMapSection.querySelector(".map-heading").dir = direction;
       googleMapSection.querySelector(".map-heading").dir = direction;
 
-      // === Bulletproof Coordinate Extraction ===
       let lat = null;
       let lng = null;
 
-      // Regex to find two decimal numbers separated by a comma (standard GPS format)
       const coordRegex = /(-?\d{1,3}\.\d+),\s*(-?\d{1,3}\.\d+)/;
 
-      // 1. Try to extract from the main Google Maps URL
       if (data.googleMapsUrl) {
         const match = data.googleMapsUrl.match(coordRegex);
         if (match) {
@@ -226,7 +226,6 @@ export const uiUtils = {
         }
       }
 
-      // 2. Fallback: Try to extract from the iframe URL if the first one failed
       if ((!lat || !lng) && data.googleMapsIframeUrl) {
         const match = data.googleMapsIframeUrl.match(coordRegex);
         if (match) {
@@ -235,7 +234,6 @@ export const uiUtils = {
         }
       }
 
-      // Debugging log so we can see exactly what is happening in the console
       console.log("Extraction Results:", { lat, lng, rawData: data });
 
       const aiBtn = document.getElementById("aiInsightBtn");
@@ -360,20 +358,27 @@ export const aiUtils = {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch AI insights");
+      let responseData;
+      try {
+        responseData = await response.json();
+      } catch (e) {
+        throw new Error("aiError");
       }
 
-      const aiData = await response.json();
+      if (!response.ok) {
+        throw new Error(responseData.error || "aiError");
+      }
 
-      this.insightsCache[cacheKey] = aiData;
+      this.insightsCache[cacheKey] = responseData;
 
       loader.style.display = "none";
-      this.renderAIResults(aiData);
+      this.renderAIResults(responseData);
     } catch (error) {
       console.error("Error fetching AI data:", error);
       loader.style.display = "none";
-      resultsContainer.innerHTML = `<div class="error-message">${languageUtils.getText("errorMessages.aiError")}</div>`;
+
+      const errorKey = error.message || "aiError";
+      resultsContainer.innerHTML = `<div class="error-message">${languageUtils.getText(`errorMessages.${errorKey}`)}</div>`;
       resultsContainer.style.display = "block";
     }
   },
@@ -386,7 +391,6 @@ export const aiUtils = {
   renderAIResults(data) {
     const resultsContainer = document.getElementById("aiResults");
 
-    // Dynamic section titles based on the selected language
     const sections = [
       {
         title: languageUtils.getText("aiSections.summary"),
@@ -419,16 +423,12 @@ export const aiUtils = {
       }
     });
 
-    // Create a generic Google Search link based on the neighborhood name
     if (data.neighborhoodName) {
       const isHebrew = languageUtils.getCurrentLanguage() === "he";
-      // Constructing dynamic button text
       const btnText = isHebrew
         ? `🔍 חפש מידע נוסף על ${data.neighborhoodName} בגוגל`
         : `🔍 Search Google for ${data.neighborhoodName}`;
 
-      // Encoding the neighborhood name for a valid Google Search URL
-      // If it's English, we don't append the word 'שכונה'
       const searchSuffix = isHebrew ? " שכונה" : " neighborhood";
       const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(data.neighborhoodName + searchSuffix)}`;
 

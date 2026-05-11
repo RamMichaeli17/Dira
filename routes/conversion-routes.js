@@ -94,9 +94,10 @@ router.post("/convert", async (req, res) => {
 
   try {
     // Check cache FIRST before touching the queue to prevent phantom queue items
-    const cacheResult = await conversionService.checkCacheForRequest(
-      req.body.projectInput,
-    );
+    // OPTIMIZATION: Use the cache result already fetched by the Rate Limiter if available
+    const cacheResult =
+      req.preFetchedCache ||
+      (await conversionService.checkCacheForRequest(req.body.projectInput));
 
     // If data was found in cache, return immediately (No need to queue!)
     if (cacheResult.fromCache) {

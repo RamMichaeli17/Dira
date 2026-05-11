@@ -5,6 +5,7 @@
     "cheerio": "^1.0.0-rc.12",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "express-rate-limit": "^8.5.1",
     "ioredis": "^5.4.2",
     "itm-wgs84": "^1.0.1",
     "proj4": "^2.11.0",
