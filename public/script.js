@@ -1,6 +1,6 @@
 // public/script.js
 
-import { uiUtils, buttonUtils } from "./utils.js";
+import { uiUtils, buttonUtils, aiUtils } from "./utils.js";
 import { requestState } from "./stateUtils.js";
 import { languageUtils } from "./languageUtils.js";
 
@@ -12,6 +12,7 @@ let abortController = null;
  */
 const handleLanguageChange = (lang) => {
   const currentLang = languageUtils.getCurrentLanguage();
+
   if (lang === currentLang) {
     const select = document.querySelector(".custom-select");
     select.classList.remove("open");
@@ -114,7 +115,7 @@ const startConversion = async () => {
     }
   } catch (error) {
     if (!abortController.signal.aborted) {
-      console.log(error);
+      console.error(error);
       uiUtils.showError("processingError");
     }
   } finally {
@@ -139,11 +140,13 @@ const updateQueueStatus = async () => {
     const response = await fetch("/queue-status", {
       headers: { "X-Request-ID": requestState.getCurrentRequestId() },
     });
+
     const data = await response.json();
 
     if (requestState.getCurrentRequestId()) {
       const isFirstInQueue =
         data.currentRequestId === requestState.getCurrentRequestId();
+
       uiUtils.updateQueueDisplay(data.queueLength, isFirstInQueue);
 
       if (!isFirstInQueue && data.queueLength > 0) {
@@ -202,6 +205,41 @@ document.getElementById("projectInput").addEventListener("keydown", (event) => {
       startConversion();
       setTimeout(updateQueueStatus, 300);
     }
+  }
+});
+
+// AI Modal Event Listeners
+document.getElementById("aiInsightBtn").addEventListener("click", (event) => {
+  const projectInput = document.getElementById("projectInput").value.trim();
+
+  const clickedBtn = event.currentTarget;
+  const lat = clickedBtn.dataset.lat;
+  const lng = clickedBtn.dataset.lng;
+
+  if (
+    projectInput &&
+    lat &&
+    lng &&
+    lat !== "undefined" &&
+    lng !== "undefined"
+  ) {
+    aiUtils.fetchAIInsights(projectInput, lat, lng);
+  } else {
+    console.warn("Coordinate data missing from cached instance.");
+    // Localized alert replacing the hardcoded English one
+    alert(languageUtils.getText("errorMessages.geoServiceError"));
+  }
+});
+
+document.querySelector(".close-ai-btn").addEventListener("click", () => {
+  aiUtils.closeModal();
+});
+
+// Close modal when clicking outside of it
+window.addEventListener("click", (event) => {
+  const modal = document.getElementById("aiModal");
+  if (event.target === modal) {
+    aiUtils.closeModal();
   }
 });
 

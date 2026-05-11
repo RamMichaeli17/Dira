@@ -6,6 +6,7 @@ const path = require("path");
 
 // Services and Routes
 const conversionRoutes = require("./routes/conversion-routes");
+const aiRoutes = require("./routes/ai-routes");
 const redisService = require("./services/redis-service");
 const browserService = require("./services/browser-service");
 
@@ -18,6 +19,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // Routes
 app.use("/", conversionRoutes);
+app.use("/api/ai", aiRoutes);
 
 /**
  * Handles graceful shutdown of the server.

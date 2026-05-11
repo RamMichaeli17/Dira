@@ -16,6 +16,7 @@ export const uiUtils = {
     document.getElementById("output").innerHTML = "";
     document.getElementById("mapPreview").style.display = "none";
     document.getElementById("googleMapPreview").style.display = "none";
+    document.getElementById("aiInsightBtn").style.display = "none";
   },
 
   /**
@@ -57,7 +58,6 @@ export const uiUtils = {
   hideError: () => {
     const outputDiv = document.getElementById("output");
     const errorContainer = outputDiv.querySelector(".error-container");
-
     if (errorContainer) {
       errorContainer.remove();
     }
@@ -101,6 +101,7 @@ export const uiUtils = {
   addIframeLoadingPlaceholder: (mapSection, iframe, src) => {
     const loadingOverlay = document.createElement("div");
     loadingOverlay.className = "iframe-loading-overlay";
+
     loadingOverlay.innerHTML = `
       <div class="iframe-spinner">
         <div class="spinner"></div>
@@ -136,7 +137,7 @@ export const uiUtils = {
     iframe.onerror = () => {
       loadingOverlay.innerHTML = `
         <div class="iframe-error">
-          <p>Failed to load map</p>
+          <p>${languageUtils.getText("errorMessages.processingError")}</p>
         </div>
       `;
       console.error("Failed to load map iframe");
@@ -208,6 +209,45 @@ export const uiUtils = {
       const direction = currentLang === "he" ? "rtl" : "ltr";
       govMapSection.querySelector(".map-heading").dir = direction;
       googleMapSection.querySelector(".map-heading").dir = direction;
+
+      // === Bulletproof Coordinate Extraction ===
+      let lat = null;
+      let lng = null;
+
+      // Regex to find two decimal numbers separated by a comma (standard GPS format)
+      const coordRegex = /(-?\d{1,3}\.\d+),\s*(-?\d{1,3}\.\d+)/;
+
+      // 1. Try to extract from the main Google Maps URL
+      if (data.googleMapsUrl) {
+        const match = data.googleMapsUrl.match(coordRegex);
+        if (match) {
+          lat = match[1];
+          lng = match[2];
+        }
+      }
+
+      // 2. Fallback: Try to extract from the iframe URL if the first one failed
+      if ((!lat || !lng) && data.googleMapsIframeUrl) {
+        const match = data.googleMapsIframeUrl.match(coordRegex);
+        if (match) {
+          lat = match[1];
+          lng = match[2];
+        }
+      }
+
+      // Debugging log so we can see exactly what is happening in the console
+      console.log("Extraction Results:", { lat, lng, rawData: data });
+
+      const aiBtn = document.getElementById("aiInsightBtn");
+
+      if (lat && lng) {
+        aiBtn.dataset.lat = lat;
+        aiBtn.dataset.lng = lng;
+        aiBtn.style.display = "inline-flex";
+      } else {
+        console.warn("Missing coordinates. AI button hidden.");
+        aiBtn.style.display = "none";
+      }
     } else {
       outputDiv.innerHTML = `<div class="error-message">${languageUtils.getText("errorMessages.processingError")}</div>`;
     }
@@ -264,5 +304,151 @@ export const buttonUtils = {
       convertButton.classList.remove("cooldown-active");
       progressBar.style.animation = "none";
     }, cooldownDuration);
+  },
+};
+
+/**
+ * Utility functions for handling the AI Neighborhood Insights feature.
+ */
+export const aiUtils = {
+  /**
+   * Local in-memory cache to store AI results per project.
+   * Persists only until the page is reloaded.
+   * Key includes both project input and language to prevent cross-language caching bugs.
+   * @type {Object.<string, Object>}
+   */
+  insightsCache: {},
+
+  /**
+   * Fetches the neighborhood insights from the backend AI service or local memory.
+   * @param {string} projectInput - The original project ID/URL entered by the user.
+   * @param {string} lat - Latitude of the project.
+   * @param {string} lng - Longitude of the project.
+   */
+  async fetchAIInsights(projectInput, lat, lng) {
+    const modal = document.getElementById("aiModal");
+    const loader = document.getElementById("aiLoader");
+    const resultsContainer = document.getElementById("aiResults");
+    const currentLang = languageUtils.getCurrentLanguage();
+
+    modal.style.display = "flex";
+
+    const cacheKey = `${projectInput}_${currentLang}`;
+
+    if (this.insightsCache[cacheKey]) {
+      console.log(`[AI Cache] Hit for project: ${cacheKey}`);
+      loader.style.display = "none";
+      this.renderAIResults(this.insightsCache[cacheKey]);
+      return;
+    }
+
+    loader.style.display = "block";
+    resultsContainer.style.display = "none";
+    resultsContainer.innerHTML = "";
+
+    try {
+      const response = await fetch("/api/ai/neighborhood", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          locationDetails: projectInput,
+          lat,
+          lng,
+          language: currentLang,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch AI insights");
+      }
+
+      const aiData = await response.json();
+
+      this.insightsCache[cacheKey] = aiData;
+
+      loader.style.display = "none";
+      this.renderAIResults(aiData);
+    } catch (error) {
+      console.error("Error fetching AI data:", error);
+      loader.style.display = "none";
+      resultsContainer.innerHTML = `<div class="error-message">${languageUtils.getText("errorMessages.aiError")}</div>`;
+      resultsContainer.style.display = "block";
+    }
+  },
+
+  /**
+   * Renders the structured AI response into the modal.
+   * Uses translations for section headers to support i18n.
+   * @param {Object} data - The JSON object returned by the AI service.
+   */
+  renderAIResults(data) {
+    const resultsContainer = document.getElementById("aiResults");
+
+    // Dynamic section titles based on the selected language
+    const sections = [
+      {
+        title: languageUtils.getText("aiSections.summary"),
+        content: data.summary,
+      },
+      {
+        title: languageUtils.getText("aiSections.education"),
+        content: data.education,
+      },
+      {
+        title: languageUtils.getText("aiSections.transportation"),
+        content: data.transportation,
+      },
+      {
+        title: languageUtils.getText("aiSections.future"),
+        content: data.futureDevelopment,
+      },
+    ];
+
+    let htmlContent = "";
+
+    sections.forEach((section) => {
+      if (section.content) {
+        htmlContent += `
+          <div class="ai-section">
+            <h4>${section.title}</h4>
+            <p>${section.content}</p>
+          </div>
+        `;
+      }
+    });
+
+    // Create a generic Google Search link based on the neighborhood name
+    if (data.neighborhoodName) {
+      const isHebrew = languageUtils.getCurrentLanguage() === "he";
+      // Constructing dynamic button text
+      const btnText = isHebrew
+        ? `🔍 חפש מידע נוסף על ${data.neighborhoodName} בגוגל`
+        : `🔍 Search Google for ${data.neighborhoodName}`;
+
+      // Encoding the neighborhood name for a valid Google Search URL
+      // If it's English, we don't append the word 'שכונה'
+      const searchSuffix = isHebrew ? " שכונה" : " neighborhood";
+      const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(data.neighborhoodName + searchSuffix)}`;
+
+      htmlContent += `
+        <div style="margin-top: 20px; text-align: center;">
+          <a href="${searchUrl}" target="_blank" class="google-search-btn" style="background: #4285f4; color: white; padding: 10px 20px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 500; transition: background 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            ${btnText}
+          </a>
+        </div>
+      `;
+    }
+
+    resultsContainer.innerHTML = htmlContent;
+    resultsContainer.style.display = "block";
+  },
+
+  /**
+   * Closes the AI Modal popup.
+   */
+  closeModal() {
+    document.getElementById("aiModal").style.display = "none";
   },
 };

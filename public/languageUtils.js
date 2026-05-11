@@ -30,13 +30,13 @@ export const languageUtils = {
 
   /**
    * Retrieves a translated string based on a dot-notated key.
-   * @param {string} key - The dot-notated key (e.g., 'header.title').
+   * Supports nested objects (e.g., 'errorMessages.invalidInput').
+   * @param {string} key - The dot-notated key.
    * @returns {string} The translated string, or the key itself if not found.
    */
   getText(key) {
     const keys = key.split(".");
     let value = translations[this.currentLang];
-
     for (const k of keys) {
       if (value === undefined) break;
       value = value[k];
@@ -46,24 +46,62 @@ export const languageUtils = {
   },
 
   /**
-   * Updates all relevant DOM elements with translations for the current language.
+   * Updates all relevant static DOM elements with translations for the current language.
+   * Note: Dynamic elements (like AI results or active error messages) are handled in utils.js.
    */
   updateTexts() {
+    // --- Main UI Elements ---
     document.title = this.getText("title");
-    document.querySelector("h1").textContent = this.getText("title");
+
+    const h1 = document.querySelector("h1");
+    if (h1) h1.textContent = this.getText("title");
 
     const labelElement =
       document.querySelector("#inputLabel") || document.querySelector("p");
-    labelElement.textContent = this.getText("inputLabel");
+    if (labelElement) labelElement.textContent = this.getText("inputLabel");
 
-    document.querySelector("#projectInput").placeholder =
-      this.getText("inputPlaceholder");
-    document.querySelector("#convertButton").textContent =
-      this.getText("convertButton");
-    document.querySelector("#cancelButton").textContent =
-      this.getText("cancelButton");
-    document.querySelector("#loading p").textContent =
-      this.getText("processingText");
-    document.querySelector("footer").textContent = this.getText("footer");
+    const projectInput = document.querySelector("#projectInput");
+    if (projectInput)
+      projectInput.placeholder = this.getText("inputPlaceholder");
+
+    const convertButton = document.querySelector("#convertButton");
+    if (convertButton)
+      convertButton.textContent = this.getText("convertButton");
+
+    const cancelButton = document.querySelector("#cancelButton");
+    if (cancelButton) cancelButton.textContent = this.getText("cancelButton");
+
+    const loadingText = document.querySelector("#processingText");
+    if (loadingText) loadingText.textContent = this.getText("processingText");
+
+    const footer = document.querySelector("footer");
+    if (footer) footer.textContent = this.getText("footer");
+
+    // --- Queue Status Elements ---
+    const queuePositionText = document.querySelector("#queuePositionText");
+    if (queuePositionText)
+      queuePositionText.textContent = this.getText("queuePosition");
+
+    const estimatedWaitText = document.querySelector("#estimatedWaitText");
+    if (estimatedWaitText)
+      estimatedWaitText.textContent = this.getText("estimatedWait");
+
+    const totalRequestsText = document.querySelector("#totalRequestsText");
+    if (totalRequestsText)
+      totalRequestsText.textContent = this.getText("totalRequests");
+
+    // --- AI Feature Elements ---
+    const aiInsightBtn = document.querySelector("#aiInsightBtn");
+    if (aiInsightBtn) aiInsightBtn.textContent = this.getText("aiInsightBtn");
+
+    const aiModalTitle = document.querySelector("#aiModalTitle");
+    if (aiModalTitle) aiModalTitle.textContent = this.getText("aiModalTitle");
+
+    const aiModalSubtitle = document.querySelector("#aiModalSubtitle");
+    if (aiModalSubtitle)
+      aiModalSubtitle.textContent = this.getText("aiModalSubtitle");
+
+    const aiLoaderText = document.querySelector("#aiLoaderText");
+    if (aiLoaderText) aiLoaderText.textContent = this.getText("aiLoaderText");
   },
 };
