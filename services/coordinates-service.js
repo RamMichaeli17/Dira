@@ -46,8 +46,7 @@ class CoordinatesService {
     });
 
     return {
-      // FIX: Corrected string interpolation typo and upgraded to the official secure Google Maps Search URL
-      googleMapsUrl: `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}&hl=iw`,
+      googleMapsUrl: `https://maps.google.com/maps?q=${latitude},${longitude}`,
       updatedUrl: `https://www.govmap.gov.il/?lay=22,Matara_MItham,Matara_Mig&bs=Matara_MItham%7CACTIVEPROJECTID~${projectNumber}`,
       ...iframeUrls,
     };

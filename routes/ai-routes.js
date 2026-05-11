@@ -11,7 +11,7 @@ const aiService = require("../services/ai-service");
 /**
  * Fetches the official address/display name from OpenStreetMap based on coordinates.
  * This prevents the AI from "hallucinating" or guessing the location incorrectly.
- * * @param {number|string} lat - The latitude of the location.
+ * @param {number|string} lat - The latitude of the location.
  * @param {number|string} lng - The longitude of the location.
  * @returns {Promise<string|null>} The official display name of the location, or null if the request fails.
  */
