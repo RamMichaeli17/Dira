@@ -2,6 +2,13 @@
 <!DOCTYPE html>
 <html lang="en">
 
+<script>
+  const savedLang = localStorage.getItem("preferredLanguage") || "he";
+  document.documentElement.lang = savedLang;
+  document.documentElement.dir = savedLang === "he" ? "rtl" : "ltr";
+</script>
+</head>
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -34,7 +41,7 @@
     </div>
 
     <p id="inputLabel"></p>
-    <input type="text" id="projectInput" placeholder="" />
+    <input type="text" id="projectInput" placeholder="" autofocus />
 
     <div class="button-container">
       <button id="convertButton"></button>

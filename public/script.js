@@ -226,9 +226,13 @@ document.getElementById("convertButton").addEventListener("click", () => {
   startConversion();
 });
 
-document.getElementById("cancelButton").addEventListener("click", async () => {
-  await cancelConversion();
-});
+document
+  .getElementById("cancelButton")
+  .addEventListener("click", async (event) => {
+    event.target.disabled = true;
+    await cancelConversion();
+    event.target.disabled = false;
+  });
 
 document.getElementById("projectInput").addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
