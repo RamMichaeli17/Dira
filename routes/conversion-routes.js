@@ -5,6 +5,12 @@ const router = express.Router();
 const queueService = require("../services/queue-service");
 const conversionService = require("../services/conversion-service");
 
+const ALLOWED_ERROR_KEYS = [
+  "invalidInput",
+  "projectNotFound",
+  "processingError",
+];
+
 /**
  * Process queue items sequentially
  */
@@ -17,7 +23,7 @@ async function processQueue() {
       const { req, res, abortController } = currentRequest;
 
       if (!req.body.projectInput) {
-        throw new Error("Project input is required");
+        throw new Error("invalidInput");
       }
 
       if (abortController.signal.aborted) {
@@ -45,8 +51,13 @@ async function processQueue() {
       // Only log and respond with error if request wasn't canceled
       if (!abortController.signal.aborted) {
         console.error("Error processing request:", error);
+
+        const clientErrorKey = ALLOWED_ERROR_KEYS.includes(error.message)
+          ? error.message
+          : "processingError";
+
         res.status(500).json({
-          error: error.message || "An error occurred during processing",
+          error: clientErrorKey,
           requestId: currentRequest.id,
           success: false,
         });
@@ -54,7 +65,6 @@ async function processQueue() {
     } finally {
       queueService.remove();
       queueService.setProcessingStatus(false);
-
       // Process next request if available
       if (queueService.getLength() > 0) {
         processQueue();
@@ -76,7 +86,7 @@ router.post("/convert", async (req, res) => {
 
   if (!req.body.projectInput) {
     return res.status(400).json({
-      error: "Project input is required",
+      error: "invalidInput",
       requestId: requestId,
       success: false,
     });
@@ -111,8 +121,13 @@ router.post("/convert", async (req, res) => {
     }
   } catch (error) {
     console.error("Error in convert route:", error);
+
+    const clientErrorKey = ALLOWED_ERROR_KEYS.includes(error.message)
+      ? error.message
+      : "processingError";
+
     return res.status(500).json({
-      error: error.message || "An error occurred during processing",
+      error: clientErrorKey,
       requestId: requestId,
       success: false,
     });
