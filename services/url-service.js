@@ -16,7 +16,7 @@ class UrlService {
     return {
       // Encoded the '|' character to '%7C' to ensure iframe compatibility across all browsers
       govMapIframeUrl: `https://www.govmap.gov.il/map.html?lay=Matara_MItham,Matara_Mig&bs=Matara_MItham%7CACTIVEPROJECTID~${projectNumber}`,
-      googleMapsIframeUrl: `https://www.google.com/maps?q=${latitude},${longitude}&hl=iw&output=embed`,
+      googleMapsIframeUrl: `https://maps.google.com/maps?q=${latitude},${longitude}`,
     };
   }
 }

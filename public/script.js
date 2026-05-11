@@ -5,6 +5,7 @@ import { requestState } from "./stateUtils.js";
 import { languageUtils } from "./languageUtils.js";
 
 let abortController = null;
+let pollingTimeoutId = null;
 
 /**
  * Handles the language switching logic and triggers a page reload with animation.
@@ -60,12 +61,50 @@ const validateInput = (input) => {
   // Check for 3-5 digit numbers
   const isValidNumber = /^\d{3,5}$/.test(trimmedInput);
 
-  // Check for valid URL (made 'www.' optional)
+  // Check for valid URL
   const isValidUrl = /^https?:\/\/(www\.)?dira\.moch\.gov\.il/.test(
     trimmedInput,
   );
 
   return isValidNumber || isValidUrl;
+};
+
+/**
+ * Polls the server periodically to update the user's current position in the queue.
+ */
+const updateQueueStatus = async () => {
+  if (!requestState.getCurrentRequestId()) {
+    return;
+  }
+
+  try {
+    const response = await fetch("/queue-status", {
+      headers: { "X-Request-ID": requestState.getCurrentRequestId() },
+    });
+
+    const data = await response.json();
+
+    // Double check that the request wasn't cleared while we were waiting for the fetch
+    if (requestState.getCurrentRequestId()) {
+      const isFirstInQueue =
+        data.currentRequestId === requestState.getCurrentRequestId();
+
+      uiUtils.updateQueueDisplay(data.queueLength, isFirstInQueue);
+
+      // Keep polling as long as this specific request is NOT the one currently processing.
+      // We removed the dependency on queueLength > 0 to handle temporary 0 responses
+      // during cache checks gracefully.
+      if (!isFirstInQueue) {
+        pollingTimeoutId = setTimeout(updateQueueStatus, 1000);
+      }
+    }
+  } catch (error) {
+    console.error("Queue status error:", error);
+    // Retry on network anomalies
+    if (requestState.getCurrentRequestId()) {
+      pollingTimeoutId = setTimeout(updateQueueStatus, 2000);
+    }
+  }
 };
 
 /**
@@ -92,8 +131,18 @@ const startConversion = async () => {
   if (abortController) {
     await cancelConversion();
   }
+
   abortController = new AbortController();
   requestState.setCurrentRequestId(Date.now().toString());
+
+  // Clear any existing phantom timers before starting a new request
+  if (pollingTimeoutId) {
+    clearTimeout(pollingTimeoutId);
+    pollingTimeoutId = null;
+  }
+
+  // Start the polling loop slightly after the request fires
+  pollingTimeoutId = setTimeout(updateQueueStatus, 300);
 
   try {
     const response = await fetch("/convert", {
@@ -114,47 +163,25 @@ const startConversion = async () => {
       uiUtils.displayResults(data);
     }
   } catch (error) {
-    if (!abortController.signal.aborted) {
+    if (!abortController?.signal?.aborted) {
       console.error(error);
       uiUtils.showError("processingError");
     }
   } finally {
-    if (abortController.signal.aborted) {
+    if (abortController?.signal?.aborted) {
       uiUtils.showError("requestCanceled");
     }
+
     uiUtils.hideLoading();
     buttonUtils.updateButtonStates(false);
-    abortController = null;
-  }
-};
 
-/**
- * Polls the server periodically to update the user's current position in the queue.
- */
-const updateQueueStatus = async () => {
-  if (!requestState.getCurrentRequestId()) {
-    return;
-  }
-
-  try {
-    const response = await fetch("/queue-status", {
-      headers: { "X-Request-ID": requestState.getCurrentRequestId() },
-    });
-
-    const data = await response.json();
-
-    if (requestState.getCurrentRequestId()) {
-      const isFirstInQueue =
-        data.currentRequestId === requestState.getCurrentRequestId();
-
-      uiUtils.updateQueueDisplay(data.queueLength, isFirstInQueue);
-
-      if (!isFirstInQueue && data.queueLength > 0) {
-        setTimeout(updateQueueStatus, 1000);
-      }
+    // Bulletproof cleanup
+    requestState.clearCurrentRequestId();
+    if (pollingTimeoutId) {
+      clearTimeout(pollingTimeoutId);
+      pollingTimeoutId = null;
     }
-  } catch (error) {
-    console.error("Queue status error:", error);
+    abortController = null;
   }
 };
 
@@ -166,6 +193,12 @@ const cancelConversion = async () => {
     abortController.abort();
     document.getElementById("loading").style.display = "none";
     document.getElementById("queueStatus").style.display = "none";
+
+    // Stop polling immediately upon cancellation
+    if (pollingTimeoutId) {
+      clearTimeout(pollingTimeoutId);
+      pollingTimeoutId = null;
+    }
 
     try {
       const response = await fetch("/cancel", {
@@ -191,19 +224,21 @@ const cancelConversion = async () => {
 
 document.getElementById("convertButton").addEventListener("click", () => {
   startConversion();
-  setTimeout(updateQueueStatus, 300);
 });
 
-document.getElementById("cancelButton").addEventListener("click", async () => {
-  await cancelConversion();
-});
+document
+  .getElementById("cancelButton")
+  .addEventListener("click", async (event) => {
+    event.target.disabled = true;
+    await cancelConversion();
+    event.target.disabled = false;
+  });
 
 document.getElementById("projectInput").addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     const convertButton = document.getElementById("convertButton");
     if (!convertButton.disabled) {
       startConversion();
-      setTimeout(updateQueueStatus, 300);
     }
   }
 });
@@ -211,7 +246,6 @@ document.getElementById("projectInput").addEventListener("keydown", (event) => {
 // AI Modal Event Listeners
 document.getElementById("aiInsightBtn").addEventListener("click", (event) => {
   const projectInput = document.getElementById("projectInput").value.trim();
-
   const clickedBtn = event.currentTarget;
   const lat = clickedBtn.dataset.lat;
   const lng = clickedBtn.dataset.lng;
@@ -226,7 +260,6 @@ document.getElementById("aiInsightBtn").addEventListener("click", (event) => {
     aiUtils.fetchAIInsights(projectInput, lat, lng);
   } else {
     console.warn("Coordinate data missing from cached instance.");
-    // Localized alert replacing the hardcoded English one
     alert(languageUtils.getText("errorMessages.geoServiceError"));
   }
 });
