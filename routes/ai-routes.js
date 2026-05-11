@@ -21,7 +21,6 @@ async function getOsmDisplayName(lat, lng) {
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
       {
         headers: {
-          // חובה להגדיר User-Agent מותאם אישית כדי שרתים בענן (כמו Render) לא ייחסמו
           "User-Agent": "DiraApp/1.0 (contact@your-domain.com)",
         },
       },
@@ -36,20 +35,22 @@ async function getOsmDisplayName(lat, lng) {
 
 /**
  * @route POST /api/ai/neighborhood
- * @description Fetches an AI-generated neighborhood summary from Madlan based on coordinates.
+ * @description Fetches an AI-generated neighborhood summary based on coordinates.
+ * Supports automatic translation to English via sequential AI processing.
  * @access Public
  * @param {Object} req - Express request object.
  * @param {Object} req.body - The payload of the request.
  * @param {number|string} req.body.lat - The latitude of the project.
  * @param {number|string} req.body.lng - The longitude of the project.
+ * @param {string} [req.body.language='he'] - The requested language for the AI output ('he' or 'en').
  * @param {Object} res - Express response object.
- * @returns {Object} 200 - A JSON object containing the structured neighborhood summary and Madlan URL.
+ * @returns {Object} 200 - A JSON object containing the structured neighborhood summary.
  * @returns {Object} 400 - A JSON object containing an "invalidInput" error message.
  * @returns {Object} 500 - A JSON object containing a processing error message.
  */
 router.post("/neighborhood", async (req, res) => {
   try {
-    const { lat, lng } = req.body;
+    const { lat, lng, language = "he" } = req.body;
 
     // Validate the incoming payload
     if (!lat || !lng) {
@@ -65,10 +66,17 @@ router.post("/neighborhood", async (req, res) => {
 
     console.log(`[Geo] OSM Identified Location: ${displayName}`);
 
-    // Step 2: Pass the exact display name to the AI service to search on Madlan
-    const neighborhoodInfo = await aiService.getNeighborhoodInfo(displayName);
+    // Step 2: Fetch the detailed neighborhood data (ALWAYS IN HEBREW INITIALLY)
+    let neighborhoodInfo = await aiService.getNeighborhoodInfo(displayName);
 
-    // Return the successful structured response
+    // Step 3: If the client requested English, translate the JSON data
+    if (language === "en") {
+      console.log(`[AI] Translating results to English...`);
+      neighborhoodInfo =
+        await aiService.translateNeighborhoodData(neighborhoodInfo);
+    }
+
+    // Return the successful structured response (in requested language)
     return res.status(200).json(neighborhoodInfo);
   } catch (error) {
     console.error("AI Route Processing Error:", error);

@@ -314,7 +314,7 @@ export const aiUtils = {
   /**
    * Local in-memory cache to store AI results per project.
    * Persists only until the page is reloaded.
-   * Key: projectInput (URL or ID), Value: AI JSON data.
+   * Key includes both project input and language to prevent cross-language caching bugs.
    * @type {Object.<string, Object>}
    */
   insightsCache: {},
@@ -329,14 +329,17 @@ export const aiUtils = {
     const modal = document.getElementById("aiModal");
     const loader = document.getElementById("aiLoader");
     const resultsContainer = document.getElementById("aiResults");
+    const currentLang = languageUtils.getCurrentLanguage();
 
     modal.style.display = "flex";
 
-    if (this.insightsCache[projectInput]) {
-      console.log(`[AI Cache] Hit for project: ${projectInput}`);
+    const cacheKey = `${projectInput}_${currentLang}`;
+
+    if (this.insightsCache[cacheKey]) {
+      console.log(`[AI Cache] Hit for project: ${cacheKey}`);
       loader.style.display = "none";
-      this.renderAIResults(this.insightsCache[projectInput]);
-      return; // יוצא מהפונקציה, אין צורך בבקשת רשת!
+      this.renderAIResults(this.insightsCache[cacheKey]);
+      return;
     }
 
     loader.style.display = "block";
@@ -349,7 +352,12 @@ export const aiUtils = {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ locationDetails: projectInput, lat, lng }),
+        body: JSON.stringify({
+          locationDetails: projectInput,
+          lat,
+          lng,
+          language: currentLang,
+        }),
       });
 
       if (!response.ok) {
@@ -358,7 +366,7 @@ export const aiUtils = {
 
       const aiData = await response.json();
 
-      this.insightsCache[projectInput] = aiData;
+      this.insightsCache[cacheKey] = aiData;
 
       loader.style.display = "none";
       this.renderAIResults(aiData);
@@ -411,17 +419,22 @@ export const aiUtils = {
       }
     });
 
-    // Optional: Add a Madlan Link button if a URL is provided by the AI
-    if (data.madlanUrl) {
-      // We check the language to determine the direction and text of the button
+    // Create a generic Google Search link based on the neighborhood name
+    if (data.neighborhoodName) {
       const isHebrew = languageUtils.getCurrentLanguage() === "he";
+      // Constructing dynamic button text
       const btnText = isHebrew
-        ? "🏠 צפה בנתוני השכונה המלאים במדלן"
-        : "🏠 View full neighborhood data on Madlan";
+        ? `🔍 חפש מידע נוסף על ${data.neighborhoodName} בגוגל`
+        : `🔍 Search Google for ${data.neighborhoodName}`;
+
+      // Encoding the neighborhood name for a valid Google Search URL
+      // If it's English, we don't append the word 'שכונה'
+      const searchSuffix = isHebrew ? " שכונה" : " neighborhood";
+      const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(data.neighborhoodName + searchSuffix)}`;
 
       htmlContent += `
         <div style="margin-top: 20px; text-align: center;">
-          <a href="${data.madlanUrl}" target="_blank" class="madlan-btn" style="background: #ff5a5f; color: white; padding: 10px 20px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 500; transition: background 0.2s;">
+          <a href="${searchUrl}" target="_blank" class="google-search-btn" style="background: #4285f4; color: white; padding: 10px 20px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 500; transition: background 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             ${btnText}
           </a>
         </div>
