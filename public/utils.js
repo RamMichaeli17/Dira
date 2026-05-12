@@ -89,7 +89,7 @@ export const uiUtils = {
           <div class="dot"></div>
         </div>
       `;
-      queueStatusDiv.style.display = "block";
+      queueStatusDiv.style.display = "flex";
     } else {
       loadingDiv.style.display = "block";
     }
@@ -147,7 +147,7 @@ export const uiUtils = {
     };
 
     iframe.src = src;
-    mapSection.style.display = "block";
+    mapSection.style.display = "flex";
   },
 
   /**
